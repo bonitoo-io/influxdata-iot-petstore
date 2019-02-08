@@ -3,11 +3,10 @@ package io.bonitoo.influxdemo.ui;
 import java.util.Arrays;
 import java.util.List;
 
-import org.influxdata.client.flux.domain.FluxColumn;
-import org.influxdata.client.flux.domain.FluxRecord;
-import org.influxdata.client.flux.domain.FluxTable;
-import org.influxdata.client.flux.domain.*;
-import org.influxdata.java.client.QueryApi;
+import org.influxdata.client.QueryApi;
+import org.influxdata.query.FluxColumn;
+import org.influxdata.query.FluxRecord;
+import org.influxdata.query.FluxTable;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;

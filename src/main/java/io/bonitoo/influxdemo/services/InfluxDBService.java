@@ -13,13 +13,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.influxdata.java.client.InfluxDBClient;
-import org.influxdata.java.client.InfluxDBClientFactory;
-import org.influxdata.java.client.WriteApi;
-import org.influxdata.java.client.writes.Point;
-import org.influxdata.java.client.writes.events.BackpressureEvent;
-import org.influxdata.java.client.writes.events.WriteErrorEvent;
-import org.influxdata.java.client.writes.events.WriteSuccessEvent;
+
+import org.influxdata.client.InfluxDBClient;
+import org.influxdata.client.InfluxDBClientFactory;
+import org.influxdata.client.WriteApi;
+import org.influxdata.client.write.Point;
+import org.influxdata.client.write.events.BackpressureEvent;
+import org.influxdata.client.write.events.WriteErrorEvent;
+import org.influxdata.client.write.events.WriteSuccessEvent;
 
 import io.bonitoo.influxdemo.entities.Sensor;
 import org.slf4j.Logger;
@@ -57,7 +58,7 @@ public class InfluxDBService {
 
         final char[] authToken = p.getProperty("influxdb.token").toCharArray();
         String url = p.getProperty("influxdb.baseUrl", "http://localhost:9999");
-        orgId = p.getProperty("influxdb.org");
+        orgId = p.getProperty("influxdb.orgId");
         bucket = p.getProperty("influxdb.bucket");
         platformClient = InfluxDBClientFactory.create(url, authToken);
 

@@ -10,10 +10,6 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <prerequisites>
-        <maven>3</maven>
-    </prerequisites>
-
     <properties>
         <vaadin.version>12.0.4</vaadin.version>
         <jetty.plugin.version>9.4.11.v20180605</jetty.plugin.version>
@@ -193,6 +189,7 @@
                         <version>${jetty.plugin.version}</version>
                         <configuration>
                             <webAppConfig>
+                                <allowDuplicateFragmentNames>true</allowDuplicateFragmentNames>
                                 <resourceBases>
                                     <!-- add the default transpileOutputDirectory as resourceBase for jetty -->
                                     <resourceBase>${project.build.directory}/${project.build.finalName}</resourceBase>

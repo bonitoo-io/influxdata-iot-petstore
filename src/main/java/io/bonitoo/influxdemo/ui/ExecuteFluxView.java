@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.influxdata.client.flux.domain.FluxRecord;
-import org.influxdata.java.client.QueryApi;
+import org.influxdata.client.QueryApi;
+import org.influxdata.query.FluxRecord;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -31,20 +31,20 @@ public class ExecuteFluxView extends HorizontalLayout {
 
     public static final String VIEW_NAME = "Execute Flux";
 
-    static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
+    private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 
-    TextArea fluxTextArea;
-    TextField statusLabel;
+    private TextArea fluxTextArea;
+    private TextField statusLabel;
 
-    String query = "from(bucket: \"my-bucket\")\n" +
+    private String query = "from(bucket: \"my-bucket\")\n" +
         "  |> range(start: -1d)\n" +
         "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
         "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
         "  |> limit(n: 10, offset: 1)";
 
 
-    Grid<FluxRecord> grid;
-    ProgressBar progressBar;
+    private Grid<FluxRecord> grid;
+    private ProgressBar progressBar;
 
 
     public ExecuteFluxView() {
