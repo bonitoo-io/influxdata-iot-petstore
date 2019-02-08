@@ -1,11 +1,13 @@
 package io.bonitoo.influxdemo.services;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,6 +28,7 @@ import org.slf4j.LoggerFactory;
 public class InfluxDBService {
 
     private static Logger log = LoggerFactory.getLogger(InfluxDBService.class);
+    private static String DEMO_CONFIG_FILE = "demo-config.properties";
 
     private static InfluxDBService instance;
     private InfluxDBClient platformClient;
@@ -33,6 +36,7 @@ public class InfluxDBService {
     static private boolean running;
 
     private String orgId;
+    private String bucket;
 
     public static synchronized InfluxDBService getInstance() {
         if (instance == null) {
@@ -41,12 +45,20 @@ public class InfluxDBService {
         return instance;
     }
 
+    Properties p = new Properties();
+
     private InfluxDBService() {
+        try {
+            log.info("Loading {}", DEMO_CONFIG_FILE);
+            p.load(InfluxDBService.class.getClassLoader().getResourceAsStream(DEMO_CONFIG_FILE));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read " + DEMO_CONFIG_FILE, e);
+        }
 
-        final char[] authToken = "DNI1bdSY5Q-2LBIwnDvAvKw3yu_UQiB94ed6RDm6clm2lZ36vPjvO51bwFX6ifp5Znmy_EQp9LtnWvVSID9W0A==".toCharArray();
-        String url = "http://localhost:9999";
-        orgId = "034805bb8aee5000";
-
+        final char[] authToken = p.getProperty("influxdb.token").toCharArray();
+        String url = p.getProperty("influxdb.baseUrl", "http://localhost:9999");
+        orgId = p.getProperty("influxdb.org");
+        bucket = p.getProperty("influxdb.bucket");
         platformClient = InfluxDBClientFactory.create(url, authToken);
 
         startWriteMetricsJob();
@@ -82,21 +94,21 @@ public class InfluxDBService {
 
                             Sensor randomData = SensorRandomGenerator.getRandomData(now, sid, loc);
                             //write data using sensor POJO class
-                            writeClient.writeMeasurement("my-bucket", "my-org", ChronoUnit.MILLIS,
+                            writeClient.writeMeasurement(bucket, getOrgId(), ChronoUnit.MILLIS,
                                 randomData);
                             log.debug("Writing: " + randomData);
                         });
                     });
 
                     //write localhost JMX data using Point structure
-                    writeClient.writePoint("my-bucket", getOrgId(), buildPointFromBean(ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean"));
-                    writeClient.writePoint("my-bucket", getOrgId(), buildPointFromBean(ManagementFactory.getRuntimeMXBean(), "runtimeMXBean"));
+                    writeClient.writePoint(bucket, getOrgId(), buildPointFromBean(ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean"));
+                    writeClient.writePoint(bucket, getOrgId(), buildPointFromBean(ManagementFactory.getRuntimeMXBean(), "runtimeMXBean"));
 
                     MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
                     Point p = Point.measurement("memoryMXBean")
                         .addField("HeapMemoryUsage.used", memoryMXBean.getHeapMemoryUsage().getUsed())
                         .addField("HeapMemoryUsage.max", memoryMXBean.getHeapMemoryUsage().getMax());
-                    writeClient.writePoint("my-bucket", getOrgId(), p);
+                    writeClient.writePoint(bucket, getOrgId(), p);
                 }
             };
 

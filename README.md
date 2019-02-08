@@ -1,22 +1,55 @@
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/vaadin-flow/Lobby#?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+# InfluxDB 2.0 Java client Vaadin demo
 
-# Bookstore App Starter for Vaadin Flow
+A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
-A project example for a Vaadin application that only requires a Servlet 3.1 container to run (no other JEE dependencies). The UI is built with Java only.
-
-The easiest way of using it is via [https://vaadin.com/start](https://vaadin.com/start) - you can choose the package naming you want.
+Vaadin application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
+The UI is built with Java only.
 
 ## Prerequisites
 
 The project can be imported into the IDE of your choice, with Java 8 installed, as a Maven project.
+
+InfluxDB 2.0 must be started on default 9999. You can start the new clean instance of InfluxDB using docker
+be following command: 
+
+```bash
+docker run --rm --name my-influxdb2 --publish 9999:9999 quay.io/influxdb/influx:nightly
+```
+
+InfluxDB must be initialized first. User and organization setup can be done using command line:
+
+```bash
+
+## onboarding
+docker exec -it my-influxdb2 influx setup --username my-user --password my-password \
+    --token my-token-123 --org my-org --bucket my-bucket --retention 48 --force
+
+#show     
+docker exec -it my-influxdb2 influx org find | grep my-org  | awk '{ print $1 }'
+
+## replace orgId in demo-config.properties
+ORGID="$(docker exec -it my-influxdb2 influx org find | grep my-org  | awk '{ print $1 }')"
+echo $ORGID
+sed -i "s/\(influxdb\.orgId=\).*\$/\1${ORGID}/" src/main/resources/demo-config.properties
+
+
+```
+This will create new organization and user:
+
+Example:
+base url: http://localhost:9999
+Username: my-user
+password: my-password
+
+
+
 
 ## Project Structure
 
 The project consists of the following three modules:
 
 - parent project: common metadata and configuration
-- bookstore-starter-flow-ui: main application module, development time
-- bookstore-starter-flow-backend: POJO classes and mock services being used in ui
+- influx-demo-ui: main application module, 
 
 ## Workflow
 
@@ -36,7 +69,3 @@ Other basic workflow steps:
 - running in production mode
   - run `mvn jetty:run -Dvaadin.productionMode` in ui module
   - open http://localhost:8080/
-
-### Branching information:
-* `master` the latest version of the starter, using latest platform snapshot
-* `v1*` the different Vaadin platform versions, eg. `v10` Vaadin 10

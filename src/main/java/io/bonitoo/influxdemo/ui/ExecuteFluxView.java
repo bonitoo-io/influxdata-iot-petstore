@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 import org.influxdata.client.flux.domain.FluxRecord;
 import org.influxdata.java.client.QueryApi;
 
@@ -119,7 +118,7 @@ public class ExecuteFluxView extends HorizontalLayout {
 
         UI current = UI.getCurrent();
 
-        queryClient.query(query, "034805bb8aee5000",
+        queryClient.query(query, InfluxDBService.getInstance().getOrgId(),
 
             (cancellable, record) -> {
                 records.add(record);
