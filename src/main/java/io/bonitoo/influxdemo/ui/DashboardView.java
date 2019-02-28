@@ -154,7 +154,7 @@ public class DashboardView extends VerticalLayout {
         super.onAttach(attachEvent);
 
         getUI().ifPresent(ui -> {
-            ui.setPollInterval(1000);
+            ui.setPollInterval(5000);
 
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");
