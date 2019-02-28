@@ -36,7 +36,7 @@ public class ExecuteFluxView extends HorizontalLayout {
     private TextArea fluxTextArea;
     private TextField statusLabel;
 
-    private String query = "from(bucket: \"my-bucket\")\n" +
+    private String query = "from(bucket: \""+InfluxDBService.getInstance().getBucket()+"\")\n" +
         "  |> range(start: -1d)\n" +
         "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
         "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
@@ -114,7 +114,7 @@ public class ExecuteFluxView extends HorizontalLayout {
         progressBar.setVisible(true);
         statusLabel.setValue("Executing...");
 
-        log.info("Executing query: " + query);
+        log.info("Executing queryInfluxDB: " + query);
 
         UI current = UI.getCurrent();
 

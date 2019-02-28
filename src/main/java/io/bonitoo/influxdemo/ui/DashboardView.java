@@ -1,5 +1,6 @@
 package io.bonitoo.influxdemo.ui;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import com.vaadin.flow.component.charts.model.Labels;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -100,7 +102,8 @@ public class DashboardView extends VerticalLayout {
         add(writeButton);
         add(rangeCombo);
 
-        chartTemperatureSettings = new FluxChartSettings("Temperature", "my-bucket", "sensor",
+        String bucketName = InfluxDBService.getInstance().getBucket();
+        chartTemperatureSettings = new FluxChartSettings("Temperature", bucketName, "sensor",
             new String[]{"temperature"},
             new TagStructure[]{new TagStructure("location", "Prague", "San Francisco"),
                 new TagStructure("sid", "sensor1", "sensor2")},
@@ -112,7 +115,7 @@ public class DashboardView extends VerticalLayout {
         chartTemperature.setWidth("80%");
         chartTemperature.setHeight("400px");
 
-        chartHumiditySettings = new FluxChartSettings("Humidity", "my-bucket", "sensor",
+        chartHumiditySettings = new FluxChartSettings("Humidity", bucketName, "sensor",
             new String[]{"humidity"},
             new TagStructure[]{
                 new TagStructure("location", "Prague", "San Francisco"),
@@ -126,13 +129,13 @@ public class DashboardView extends VerticalLayout {
         chartHumidity.setHeight("400px");
 
 
-        osBeanChartSettings = new FluxChartSettings("CPU", "my-bucket", "operatingSystemMXBean",
+        osBeanChartSettings = new FluxChartSettings("CPU", bucketName, "operatingSystemMXBean",
             new String[]{"SystemCpuLoad", "ProcessCpuLoad"}, null, null, 0, ChartType.SPLINE);
         osBeanChart = createChart(osBeanChartSettings);
         osBeanChart.setWidth("80%");
         osBeanChart.setHeight("400px");
 
-        memBeanChartSettings = new FluxChartSettings("Memory", "my-bucket", "memoryMXBean",
+        memBeanChartSettings = new FluxChartSettings("Memory", bucketName, "memoryMXBean",
             new String[]{"HeapMemoryUsage.max", "HeapMemoryUsage.used"}, null, null, 0, ChartType.AREA);
         memBeanChart = createChart(memBeanChartSettings);
         memBeanChart.setHeight("400px");
@@ -208,7 +211,8 @@ public class DashboardView extends VerticalLayout {
         configuration.getTooltip().setEnabled(true);
         configuration.getLegend().setEnabled(true);
         final String fluxQueryBase = constructQuery(fs.bucket, rangeCombo.getValue(), fs.measurement, fs.filterFields, fs.filterTags);
-        List<FluxTable> tables = queryClient.query(fluxQueryBase, InfluxDBService.getInstance().getOrgId());
+        List<FluxTable> tables = queryInfluxDB(fluxQueryBase);
+
         for (FluxTable fluxTable : tables) {
             DataSeries dataSeries = new DataSeries();
             dataSeries.setName(getSeriesName(fluxTable));
@@ -223,13 +227,28 @@ public class DashboardView extends VerticalLayout {
         return chart;
     }
 
+    private List<FluxTable> queryInfluxDB(String query) {
+
+        QueryApi queryClient = InfluxDBService.getInstance().getPlatformClient().getQueryApi();
+
+        try {
+            return queryClient.query(query, InfluxDBService.getInstance().getOrgId());
+        } catch (Exception e) {
+
+            Notification notification = new Notification(
+                e.getMessage(), 3000);
+            notification.setPosition(Notification.Position.TOP_CENTER);
+            notification.open();
+            return new ArrayList<>();
+        }
+
+    }
+
     private void refreshChart(Chart chart, FluxChartSettings fs) {
         String query = constructQuery(fs.bucket, rangeCombo.getValue(),
             fs.measurement, fs.filterFields, fs.filterTags);
 
-        QueryApi queryClient = InfluxDBService.getInstance().getPlatformClient().getQueryApi();
-
-        List<FluxTable> fluxTables = queryClient.query(query, InfluxDBService.getInstance().getOrgId());
+        List<FluxTable> fluxTables = queryInfluxDB(query);
 
         for (int i = 0; i < fluxTables.size(); i++) {
             FluxTable fluxTable = fluxTables.get(i);
@@ -251,6 +270,7 @@ public class DashboardView extends VerticalLayout {
 
     /**
      * Construct series name from flux table
+     *
      * @param fluxTable flux table result
      * @return series display name
      */
@@ -271,7 +291,7 @@ public class DashboardView extends VerticalLayout {
                     sb.append(first.getValueByIndex(fluxColumn.getIndex())).append(" ");
                 } else {
                     sb.append(fluxColumn.getLabel());
-                        sb.append(": ")
+                    sb.append(": ")
                         .append(first.getValueByIndex(fluxColumn.getIndex()))
                         .append(" ");
                 }

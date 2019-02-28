@@ -160,4 +160,8 @@ public class InfluxDBService {
     public String getOrgId() {
         return orgId;
     }
+
+    public String getBucket() {
+        return bucket;
+    }
 }
