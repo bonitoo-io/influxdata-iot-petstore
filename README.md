@@ -2,15 +2,18 @@
 
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
-It is a Vaadin application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
-The UI is built with Java only.
+It is a [Vaadin Flow](https://vaadin.com/flow) application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
+The UI is built with Java only. 
 
 ## Prerequisites
 
 The project can be imported into the IDE of your choice, with Java 8 installed, as a Maven project.
 
+Demo uses [Vaadin Charts](https://vaadin.com/components/vaadin-charts) library for the metrics visualization. Vaadin Charts is
+commercial library and license file is needed in order to compile a run the demo. Free trial license can be obtained from https://vaadin.com/trial. 
+
 InfluxDB 2.0 must be started on default 9999. You can start the new clean instance of InfluxDB using docker
-be following command: 
+by following command: 
 
 ```bash
 docker run --rm --name my-influxdb2 --publish 9999:9999 quay.io/influxdb/influx:nightly
