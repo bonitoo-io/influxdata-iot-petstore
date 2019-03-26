@@ -1,5 +1,12 @@
 # InfluxDB 2.0 Java client Vaadin demo
 
+!(https://travis-ci.org/rhajek/influx-demo.svg?branch=master)
+
+[![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/influxdata/influxdb-java)
+[![codecov.io](http://codecov.io/github/rhajek/influx-demo/coverage.svg?branch=master)](http://codecov.io/github/rhajek/influx-demo?branch=master)
+[![Issue Count](https://codeclimate.com/github/rhajek/influx-demo/badges/issue_count.svg)](https://codeclimate.com/github/rhajek/influx-demo)
+
+
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
 It is a [Vaadin Flow](https://vaadin.com/flow) application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
