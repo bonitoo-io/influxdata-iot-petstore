@@ -1,11 +1,6 @@
 # InfluxDB 2.0 Java client Vaadin demo
 
-!(https://travis-ci.org/rhajek/influx-demo.svg?branch=master)
-
 [![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/influxdata/influxdb-java)
-[![codecov.io](http://codecov.io/github/rhajek/influx-demo/coverage.svg?branch=master)](http://codecov.io/github/rhajek/influx-demo?branch=master)
-[![Issue Count](https://codeclimate.com/github/rhajek/influx-demo/badges/issue_count.svg)](https://codeclimate.com/github/rhajek/influx-demo)
-
 
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
@@ -17,9 +12,13 @@ The UI is built with Java only.
 The project can be imported into the IDE of your choice, with Java 8 installed, as a Maven project.
 
 Demo uses [Vaadin Charts](https://vaadin.com/components/vaadin-charts) library for the metrics visualization. Vaadin Charts is
-commercial library and license file is needed in order to compile a run the demo. Free trial license can be obtained from https://vaadin.com/trial. 
+commercial library and license file is needed in order to compile a run the demo. Free trial license can be obtained from https://vaadin.com/trial.
 
-InfluxDB 2.0 must be started on default 9999. You can start the new clean instance of InfluxDB using docker
+InfluxDB 2.0 must be started on localhost on default port 9999.
+
+You can simply run `./scripts/influxdb-restart.sh` to create and setup InfluxDB 2.0 server in docker. 
+
+ You can start the new clean instance of InfluxDB manually using docker
 by following command: 
 
 ```bash
