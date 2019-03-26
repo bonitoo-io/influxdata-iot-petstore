@@ -48,8 +48,8 @@ public class Menu extends FlexLayout {
         // Note! Image resource url is resolved here as it is dependent on the
         // execution mode (development or production) and browser ES level support
         String resolvedImage = VaadinServletService.getCurrent()
-                .resolveResource("frontend://img/table-logo.png",
-                        VaadinSession.getCurrent().getBrowser());
+            .resolveResource("frontend://img/table-logo.png",
+                VaadinSession.getCurrent().getBrowser());
 
         Image image = new Image(resolvedImage, "");
         top.add(image);
@@ -59,35 +59,36 @@ public class Menu extends FlexLayout {
         // container for the navigation buttons, which are added by addView()
         tabs = new Tabs();
         tabs.setOrientation(Tabs.Orientation.VERTICAL);
-        setFlexGrow(1, tabs);
-        add(tabs);
+//        setFlexGrow(1, tabs);
 
         // logout menu item
         Button logoutButton = new Button("Logout",
-                VaadinIcon.SIGN_OUT.create());
+            VaadinIcon.SIGN_OUT.create());
+        logoutButton.setClassName("menu-link");
+        logoutButton.setId("logout-button");
         logoutButton.addClickListener(event -> {
             VaadinSession.getCurrent().getSession().invalidate();
             UI.getCurrent().getPage().reload();
         });
-
         logoutButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+
+        add(tabs);
         add(logoutButton);
+
     }
 
     /**
      * Add a view to the navigation menu
      *
-     * @param viewClass
-     *         that has a {@code Route} annotation
-     * @param caption
-     *         view caption in the menu
-     * @param icon
-     *         view icon in the menu
+     * @param viewClass that has a {@code Route} annotation
+     * @param caption   view caption in the menu
+     * @param icon      view icon in the menu
      */
     public void addView(Class<? extends Component> viewClass, String caption,
-            Icon icon) {
+                        Icon icon) {
         Tab tab = new Tab();
         RouterLink routerLink = new RouterLink(null, viewClass);
+        routerLink.setId(caption);
         routerLink.setClassName("menu-link");
         routerLink.add(icon);
         routerLink.add(new Span(caption));

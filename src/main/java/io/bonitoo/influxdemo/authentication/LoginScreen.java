@@ -81,6 +81,7 @@ public class LoginScreen extends FlexLayout {
         loginForm.add(buttons);
 
         buttons.add(login = new Button("Login"));
+        login.setId("login-button");
         login.addClickListener(event -> login());
         loginForm.getElement().addEventListener("keypress", event -> login()).setFilter("event.key == 'Enter'");
         login.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_PRIMARY);

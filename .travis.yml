@@ -1,0 +1,33 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+sudo: required
+
+cache:
+  timeout: 10000
+  directories:
+  - $HOME/.m2
+
+addons:
+  apt:
+    packages:
+      - chromium-chromedriver
+
+services:
+  - docker
+
+install: true
+
+before_script:
+  - ln -s /usr/lib/chromium-browser/chromedriver ~/bin/chromedriver
+
+script:
+  - ./scripts/influxdb-restart.sh
+  - mvn -B clean install -Dmaven.javadoc.skip=true
+  - bash <(curl -s https://codecov.io/bash)
+
+after_failure:
+  - cat target/surefire-reports/*.txt
+  - cat target/failsafe-reports/*.txt

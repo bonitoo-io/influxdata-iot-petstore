@@ -5,7 +5,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.reflect.Method;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.TimerTask;
@@ -13,13 +12,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.InfluxDBClientFactory;
 import org.influxdata.client.WriteApi;
+import org.influxdata.client.domain.WritePrecision;
 import org.influxdata.client.write.Point;
 import org.influxdata.client.write.events.BackpressureEvent;
 import org.influxdata.client.write.events.WriteErrorEvent;
+import org.influxdata.client.write.events.WriteRetriableErrorEvent;
 import org.influxdata.client.write.events.WriteSuccessEvent;
 
 import io.bonitoo.influxdemo.entities.Sensor;
@@ -39,6 +39,10 @@ public class InfluxDBService {
     private String orgId;
     private String bucket;
 
+    public InfluxDBService() {
+        this(true);
+    }
+
     public static synchronized InfluxDBService getInstance() {
         if (instance == null) {
             instance = new InfluxDBService();
@@ -46,9 +50,16 @@ public class InfluxDBService {
         return instance;
     }
 
+    public static synchronized InfluxDBService getInstance(boolean startJob) {
+        if (instance == null) {
+            instance = new InfluxDBService(startJob);
+        }
+        return instance;
+    }
+
     Properties p = new Properties();
 
-    private InfluxDBService() {
+    private InfluxDBService(final boolean startJob) {
         try {
             log.info("Loading {}", DEMO_CONFIG_FILE);
             p.load(InfluxDBService.class.getClassLoader().getResourceAsStream(DEMO_CONFIG_FILE));
@@ -75,15 +86,19 @@ public class InfluxDBService {
         if (!running) {
             WriteApi writeClient = platformClient.getWriteApi();
             writeClient.listenEvents(WriteErrorEvent.class, e -> {
-                log.error("Write error", e);
+                log.error("WriteErrorEvent error", e);
             });
 
+
+            writeClient.listenEvents(WriteRetriableErrorEvent.class, e -> {
+                log.error("WriteRetriableErrorEvent error", e);
+            });
             writeClient.listenEvents(WriteSuccessEvent.class, e -> {
-                log.debug("Write success", e);
+                log.debug("WriteSuccessEvent success", e);
             });
 
             writeClient.listenEvents(BackpressureEvent.class, e -> {
-                log.warn("Backpressure event", e);
+                log.warn("BackpressureEvent event", e);
             });
 
             TimerTask timerTask = new TimerTask() {
@@ -95,8 +110,7 @@ public class InfluxDBService {
 
                             Sensor randomData = SensorRandomGenerator.getRandomData(now, sid, loc);
                             //write data using sensor POJO class
-                            writeClient.writeMeasurement(bucket, getOrgId(), ChronoUnit.MILLIS,
-                                randomData);
+                            writeClient.writeMeasurement(bucket, getOrgId(), WritePrecision.MS, randomData);
                             log.debug("Writing: " + randomData);
                         });
                     });
