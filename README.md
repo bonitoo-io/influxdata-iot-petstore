@@ -1,6 +1,6 @@
 # InfluxDB 2.0 Java client Vaadin demo
 
-[![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/influxdata/influxdb-java)
+[![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/rhajek/influx-demo)
 
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
