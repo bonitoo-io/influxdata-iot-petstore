@@ -195,63 +195,8 @@ public class InfluxDBServiceTest {
         return InfluxDBService.getInstance(false);
     }
 
-    @Test
-    public void testVariables() {
-
-
-        QueryApi queryApi = getInfluxDBService().getPlatformClient().getQueryApi();
-
-        Flux query = Flux.from(getInfluxDBService().getBucket())
-            .filter(Restrictions.measurement().equal("sensor"))
-            .range(-1L, ChronoUnit.HOURS);
-
-        System.out.println(query.toString());
-
-
-        String q = "from(bucket: \"default\")\n" +
-            "  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n" +
-            "  |> filter(fn: (r) => r._measurement == \"kubernetes_node\")\n" +
-            "  |> filter(fn: (r) => r._field == \"allocatable_memory_bytes\")\n" +
-            "  |> filter(fn: (r) => r.host == v.host)\n" +
-            "  \n" +
-            "//  |> map(fn: (r) => r._value, mergeKey: true)\n" +
-            "  |> window(period: v.windowPeriod)\n" +
-            "  |> last()\n" +
-            "  |> group(columns: [\"_value\", \"_time\", \"_start\", \"_stop\"], mode: \"except\")\n" +
-            "  |> map(fn: (r) => r._value / 1000000000, mergeKey: true)\n" +
-            "  |> yield(name: \"last\")\n";
-
-        List<FluxTable> query1 = queryApi.query(q, getInfluxDBService().getOrgId());
-
-        Assertions.assertThat(query1).isNotNull();
-    }
-
     public QueryApi getQueryApi() {
         return getInfluxDBService().getPlatformClient().getQueryApi();
     }
-
-    @Test
-    public void testFluxDistinct() {
-
-
-        String q = "from(bucket: \"default\")\n" +
-            "  |> range(start: -1h)\n" +
-            "  |> filter(fn: (r) => r._measurement == \"kubernetes_pod_container\")\n" +
-            "  |> filter(fn: (r) => r._field == \"state_code\")\n" +
-            "//  |> filter(fn: (r) => r.host == \"macek.local\")\n" +
-            "//  |> filter(fn: (r) => r.namespace == v.namespace)\n" +
-            "  |> filter(fn: (r) => r.state == \"XXX\") \n" +
-            "  |> drop(columns: [\"container_name\"])\n" +
-            "  |> distinct(column: \"pod_name\")";
-
-        System.out.println(q);
-
-        List<FluxTable> query = getQueryApi().query(q, getInfluxDBService().getOrgId());
-
-        System.out.println(query);
-
-
-    }
-
 
 }
