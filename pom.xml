@@ -11,7 +11,7 @@
     <packaging>war</packaging>
 
     <properties>
-        <vaadin.version>13.0.1</vaadin.version>
+        <vaadin.version>12.0.3</vaadin.version>
         <jetty.plugin.version>9.4.11.v20180605</jetty.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8
@@ -51,6 +51,25 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars.bowergithub.gatanaso</groupId>
+            <artifactId>multiselect-combo-box</artifactId>
+            <version>0.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.vaadin.gatanaso</groupId>
+            <artifactId>multiselect-combo-box-flow</artifactId>
+            <version>0.0.7</version>
+        </dependency>
+
+        <!-- override vaadin-bom defined version -->
+        <dependency>
+            <groupId>org.webjars.bowergithub.vaadin</groupId>
+            <artifactId>vaadin-combo-box</artifactId>
+            <version>4.2.7</version>
         </dependency>
 
         <dependency>

@@ -28,9 +28,11 @@ public class InitListener implements VaadinServiceInitListener {
         initEvent.getSource().addUIInitListener(uiInitEvent -> {
             uiInitEvent.getUI().addBeforeEnterListener(enterEvent -> {
                 //navigate to login
+
                 if (!accessControl.isUserSignedIn() && !LoginScreen.class
                     .equals(enterEvent.getNavigationTarget()))
                     enterEvent.rerouteTo(LoginScreen.class);
+
             });
         });
     }

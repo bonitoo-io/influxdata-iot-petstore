@@ -2,7 +2,6 @@ package io.bonitoo.influxdemo.ui;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
@@ -11,7 +10,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
@@ -36,7 +34,7 @@ public class ExecuteFluxView extends HorizontalLayout {
     private TextArea fluxTextArea;
     private TextField statusLabel;
 
-    private String query = "from(bucket: \""+InfluxDBService.getInstance().getBucket()+"\")\n" +
+    private String query = "from(bucket: \"" + InfluxDBService.getInstance().getBucket() + "\")\n" +
         "  |> range(start: -1d)\n" +
         "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
         "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
@@ -125,18 +123,7 @@ public class ExecuteFluxView extends HorizontalLayout {
             },
 
             (error) -> {
-                log.error(error.getMessage(), error);
-                current.accessSynchronously(() -> {
-                    Notification notification = new Notification(
-                        error.getMessage(), 3000);
-                    notification.setPosition(Notification.Position.TOP_CENTER);
-                    notification.open();
-                    statusLabel.setValue(error.getMessage());
-                    statusLabel.setInvalid(true);
-                    progressBar.setIndeterminate(false);
-//                    progressBar.setVisible(false);
-                    current.setPollInterval(-1);
-                });
+                BrowseDataView.handleError(current, error, statusLabel, progressBar);
             },
 
             () -> {
@@ -144,23 +131,7 @@ public class ExecuteFluxView extends HorizontalLayout {
                 log.info("Query completed.");
                 current.accessSynchronously(() -> {
 
-                    grid.setItems(records);
-
-                    if (records.size() > 0) {
-                        FluxRecord fluxRecord = records.get(0);
-                        Map<String, Object> values = fluxRecord.getValues();
-
-                        values.keySet().forEach(key -> {
-
-                            if (grid.getColumnByKey(key) == null) {
-                                if (!key.startsWith("_") && !"result".equals(key)) {
-                                    //add columns with tags
-                                    grid.addColumn(record -> record.getValueByKey(key)).setKey(key).setHeader(key);
-                                }
-                            }
-                        });
-                    }
-
+                    BrowseDataView.addToGrid(grid, records);
                     stopWatch.stop();
                     statusLabel.setValue("Query completed. " + stopWatch.getTime());
                     statusLabel.setInvalid(false);

@@ -274,7 +274,7 @@ public class DashboardView extends VerticalLayout {
      * @param fluxTable flux table result
      * @return series display name
      */
-    private String getSeriesName(final FluxTable fluxTable) {
+    public static String getSeriesName(final FluxTable fluxTable) {
 
         List<FluxColumn> groupKey = fluxTable.getGroupKey();
         StringBuilder sb = new StringBuilder();
