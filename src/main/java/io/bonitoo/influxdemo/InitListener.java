@@ -21,7 +21,7 @@ public class InitListener implements VaadinServiceInitListener {
             .createAccessControl();
 
         initEvent.getSource().addServiceDestroyListener(event -> {
-            InfluxDBService.getInstance().stopWriteMetricsJob();
+            InfluxDBService.getInstance().stopGenerator();
 
         });
 

@@ -11,34 +11,18 @@
     <style>
 
         html {
-            /*--lumo-base-color: #292933 ;*/
-            /*--lumo-body-text-color: #bec2cc;*/
-            /*--lumo-primary-color: ;*/
-            /*--lumo-primary-color: #00c9ff;*/
-            /*--lumo-primary-text-color: #bec2cc;*/
-
-            /*--lumo-shade-60pct: ;*/
-            /*--lumo-base-color: #292933;*/
-            /*--lumo-primary-text-color: #22adf6;*/
-
-
-
         }
         html body {
-            /*background: var(--lumo-shade-60pct);*/
         }
 
         .login-information {
             min-width: 300px;
             flex: 0;
             background: var(--lumo-shade-80pct);
-            /*background: #292933;*/
             color: #bec2cc;
         }
         .login-information h1,h2,h3,h4 {
-            /*background: var(--lumo-shade-60pct);*/
             color: #bec2cc;
-
         }
 
         .login-information img {
@@ -47,11 +31,7 @@
             margin-left: auto;
             margin-top: 20%;
         }
-        /*
-        .centeringLayout {
-            padding: 20px;
-        }
-        */
+
         /* Stack login-screen vertically on narrow screen */
         @media (max-width: 800px) {
 
@@ -117,12 +97,12 @@
          * except for the link-tabs, which are hidden but
          * can be opened via a button.
          */
-        @media (max-width: 800px) {
+        @media (max-width: 3000px) {
 
             .main-layout {
                 flex-direction: column;
                 --top-bar-height: 50px;
-                --top-bar-margin: 5vw;
+                --top-bar-margin: 2vw;
             }
 
             .menu-bar {
@@ -160,63 +140,22 @@
         }
 
         @media (max-width: 550px) {
-
             .product-form {
                 width: 100%;
-
                 /* Prevent text-fields from overflowing on narrow screens */
                 --vaadin-text-field-default-width: 6em;
             }
         }
 
-        /* Color codes for the availability statuses of the products */
-        .Available {
-            color: #2dd085;
-        }
-
-        .Coming {
-            color: #ffc66e;
-        }
-
-        .Discontinued {
-            color: #f54993;
-        }
-
-        /* Replicating the labels of official Vaadin components
-         * for the CheckBoxGroup add-on.
-        */
-        /*
-        .vaadin-label {
-            align-self: flex-start;
-            color: var(--lumo-secondary-text-color);
-            font-weight: 500;
-            font-size: var(--lumo-font-size-s);
-            margin-left: calc(var(--lumo-border-radius) / 4);
-            transition: color 0.2s;
-            line-height: 1;
-            padding-bottom: 0.5em;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            position: relative;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-        */
-
-
-        .vaadin-label:hover {
-            color: var(--lumo-body-text-color);
-        }
-
         .flex-charts-layout {
-
             display: flex;
             flex-wrap: wrap;
-            /*grid-template-columns: repeat(auto-fill,minmax(160px, 1fr))*/
         }
         .flex-charts-layout>* {
             flex: 1 1 400px;
+        }
+        .mainMenuContent {
+            margin-left: 10px;
         }
 
     </style>

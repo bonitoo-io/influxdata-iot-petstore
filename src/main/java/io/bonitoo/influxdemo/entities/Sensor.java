@@ -7,6 +7,9 @@ import org.influxdata.annotations.Measurement;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+/**
+ * Demo Sensor example class.
+ */
 @Measurement(name = "sensor")
 public class Sensor {
 
@@ -29,6 +32,7 @@ public class Sensor {
     private
     double humidity;
 
+    /* define custom column name */
     @Column(name = "battery_capacity")
     private
     double batteryCapacity;

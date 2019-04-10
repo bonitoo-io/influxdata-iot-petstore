@@ -30,6 +30,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.shared.Registration;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 @Route(value = DashboardView.VIEW_NAME, layout = MainLayout.class)
 @RouteAlias(value = "", layout = MainLayout.class)
+@PageTitle(value = "Dashboard")
 
 public class DashboardView extends VerticalLayout {
 
@@ -71,7 +73,7 @@ public class DashboardView extends VerticalLayout {
         statusLabel = new TextField();
         statusLabel.setWidth("90%");
         statusLabel.setEnabled(false);
-        statusLabel.setValue(influxDBService.isRunningWrite() ? "Running" : "Not running.");
+        statusLabel.setValue(influxDBService.isGeneratorRunning() ? "Running" : "Not running.");
         statusLabel.addThemeVariants(TextFieldVariant.LUMO_SMALL);
 
         add(statusLabel);
@@ -80,17 +82,17 @@ public class DashboardView extends VerticalLayout {
         hl.setWidth("100%");
         add(hl);
 
-        Button writeButton = new Button(influxDBService.isRunningWrite() ? "Stop write" : "Start write");
+        Button writeButton = new Button(influxDBService.isGeneratorRunning() ? "Stop write" : "Start write");
         writeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         writeButton.addClickListener(event ->
         {
-            if (influxDBService.isRunningWrite()) {
-                influxDBService.stopWriteMetricsJob();
+            if (influxDBService.isGeneratorRunning()) {
+                influxDBService.stopGenerator();
             } else {
-                influxDBService.startWriteMetricsJob();
+                influxDBService.startGenerator();
             }
-            statusLabel.setValue(influxDBService.isRunningWrite() ? "Running" : "Not running.");
-            writeButton.setText(influxDBService.isRunningWrite() ? "Stop write" : "Start write");
+            statusLabel.setValue(influxDBService.isGeneratorRunning() ? "Running" : "Not running.");
+            writeButton.setText(influxDBService.isGeneratorRunning() ? "Stop write" : "Start write");
         });
 
         rangeCombo = new ComboBox<>("Range start", rangeStartValues);
@@ -154,7 +156,7 @@ public class DashboardView extends VerticalLayout {
         super.onAttach(attachEvent);
 
         getUI().ifPresent(ui -> {
-            ui.setPollInterval(5000);
+            ui.setPollInterval(2000);
 
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");

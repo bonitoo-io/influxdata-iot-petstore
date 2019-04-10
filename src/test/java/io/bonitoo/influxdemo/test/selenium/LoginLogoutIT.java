@@ -40,11 +40,13 @@ public class LoginLogoutIT  {
 
     @Test
     public void loginLogoutTest() {
-        driver.get("http://localhost:8080/");
+        driver.get("http://localhost:8080/Login");
         Assertions.assertThat(driver.getPageSource().contains("Log in with any other username to have read-only access")).isTrue();
 
         click(By.id("login-button"));
+        click(By.className("menu-button"));
         click(By.id("Dashboard"));
+        click(By.className("menu-button"));
         click(By.id("logout-button"));
 
         Assertions.assertThat(driver.getPageSource().contains("Log in with any other username to have read-only access")).isTrue();

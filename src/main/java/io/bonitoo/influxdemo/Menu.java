@@ -13,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
@@ -59,22 +60,7 @@ public class Menu extends FlexLayout {
         // container for the navigation buttons, which are added by addView()
         tabs = new Tabs();
         tabs.setOrientation(Tabs.Orientation.VERTICAL);
-//        setFlexGrow(1, tabs);
-
-        // logout menu item
-        Button logoutButton = new Button("Logout",
-            VaadinIcon.SIGN_OUT.create());
-        logoutButton.setClassName("menu-link");
-        logoutButton.setId("logout-button");
-        logoutButton.addClickListener(event -> {
-            VaadinSession.getCurrent().getSession().invalidate();
-            UI.getCurrent().getPage().reload();
-        });
-        logoutButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-
         add(tabs);
-        add(logoutButton);
-
     }
 
     /**
@@ -87,12 +73,36 @@ public class Menu extends FlexLayout {
     public void addView(Class<? extends Component> viewClass, String caption,
                         Icon icon) {
         Tab tab = new Tab();
-        RouterLink routerLink = new RouterLink(null, viewClass);
+        RouterLink routerLink = new RouterLink(null, viewClass) {
+            @Override
+            public void afterNavigation(final AfterNavigationEvent event) {
+                super.afterNavigation(event);
+                tabs.removeClassName(SHOW_TABS);
+            }
+        };
         routerLink.setId(caption);
         routerLink.setClassName("menu-link");
         routerLink.add(icon);
         routerLink.add(new Span(caption));
+
         tab.add(routerLink);
         tabs.add(tab);
+    }
+
+    public void addLogout() {
+        // logout menu item
+        Tab tab = new Tab();
+        Button logoutButton = new Button("Logout",
+            VaadinIcon.SIGN_OUT.create());
+        tab.add(logoutButton);
+        logoutButton.setClassName("menu-link");
+        logoutButton.setId("logout-button");
+        logoutButton.addClickListener(event -> {
+            VaadinSession.getCurrent().getSession().invalidate();
+            UI.getCurrent().getPage().reload();
+        });
+        logoutButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        tabs.add(tab);
+
     }
 }

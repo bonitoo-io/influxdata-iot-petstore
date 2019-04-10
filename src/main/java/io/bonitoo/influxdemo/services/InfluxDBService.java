@@ -1,33 +1,17 @@
 package io.bonitoo.influxdemo.services;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.reflect.Method;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.InfluxDBClientFactory;
-import org.influxdata.client.WriteApi;
-import org.influxdata.client.domain.WritePrecision;
-import org.influxdata.client.write.Point;
-import org.influxdata.client.write.events.BackpressureEvent;
-import org.influxdata.client.write.events.WriteErrorEvent;
-import org.influxdata.client.write.events.WriteRetriableErrorEvent;
-import org.influxdata.client.write.events.WriteSuccessEvent;
 import org.influxdata.query.FluxTable;
 
-import io.bonitoo.influxdemo.entities.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,15 +22,11 @@ public class InfluxDBService {
 
     private static InfluxDBService instance;
     private InfluxDBClient platformClient;
-    private static ScheduledExecutorService executor;
     static private boolean running;
 
     private String orgId;
     private String bucket;
-
-    public InfluxDBService() {
-        this(true);
-    }
+    private DataGenerator dataGenerator;
 
     public static synchronized InfluxDBService getInstance() {
         if (instance == null) {
@@ -62,9 +42,14 @@ public class InfluxDBService {
         return instance;
     }
 
+    private InfluxDBService() {
+        this(true);
+    }
+
     Properties p = new Properties();
 
-    private InfluxDBService(final boolean startJob) {
+    public InfluxDBService(final boolean startJob) {
+
         try {
             log.info("Loading {}", DEMO_CONFIG_FILE);
             p.load(InfluxDBService.class.getClassLoader().getResourceAsStream(DEMO_CONFIG_FILE));
@@ -77,103 +62,25 @@ public class InfluxDBService {
         orgId = p.getProperty("influxdb.orgId");
         bucket = p.getProperty("influxdb.bucket");
         platformClient = InfluxDBClientFactory.create(url, authToken);
+        this.dataGenerator = new DataGenerator(this);
 
-        startWriteMetricsJob();
+        startGenerator();
     }
 
     public InfluxDBClient getPlatformClient() {
         return platformClient;
     }
 
-    public void startWriteMetricsJob() {
-        log.info("Starting scheduler");
-
-        if (!running) {
-            WriteApi writeClient = platformClient.getWriteApi();
-            writeClient.listenEvents(WriteErrorEvent.class, e -> {
-                log.error("WriteErrorEvent error", e);
-            });
-
-
-            writeClient.listenEvents(WriteRetriableErrorEvent.class, e -> {
-                log.error("WriteRetriableErrorEvent error", e);
-            });
-            writeClient.listenEvents(WriteSuccessEvent.class, e -> {
-                log.debug("WriteSuccessEvent success", e);
-            });
-
-            writeClient.listenEvents(BackpressureEvent.class, e -> {
-                log.warn("BackpressureEvent event", e);
-            });
-
-            TimerTask timerTask = new TimerTask() {
-                @Override
-                public void run() {
-                    Instant now = Instant.now();
-                    Arrays.stream(SensorRandomGenerator.sids).forEach(sid -> {
-                        Arrays.stream(SensorRandomGenerator.locations).forEach(loc -> {
-
-                            Sensor randomData = SensorRandomGenerator.getRandomData(now, sid, loc);
-                            //write data using sensor POJO class
-                            writeClient.writeMeasurement(bucket, getOrgId(), WritePrecision.MS, randomData);
-                            log.debug("Writing: " + randomData);
-                        });
-                    });
-
-                    //write localhost JMX data using Point structure
-                    writeClient.writePoint(bucket, getOrgId(), buildPointFromBean(ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean"));
-                    writeClient.writePoint(bucket, getOrgId(), buildPointFromBean(ManagementFactory.getRuntimeMXBean(), "runtimeMXBean"));
-
-                    MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-                    Point p = Point.measurement("memoryMXBean")
-                        .addField("HeapMemoryUsage.used", memoryMXBean.getHeapMemoryUsage().getUsed())
-                        .addField("HeapMemoryUsage.max", memoryMXBean.getHeapMemoryUsage().getMax());
-                    writeClient.writePoint(bucket, getOrgId(), p);
-                }
-            };
-
-            executor = Executors.newScheduledThreadPool(10);
-
-            long delay = 1000L;
-            long period = 1000L;
-            executor.scheduleAtFixedRate(timerTask, delay, period, TimeUnit.MILLISECONDS);
-            running = true;
-        }
+    public void startGenerator() {
+        dataGenerator.startGenerator();
     }
 
-    private Point buildPointFromBean(final Object bean, String name) {
-
-        Point point = Point.measurement(name);
-
-        Method[] declaredMethods = bean.getClass().getDeclaredMethods();
-        for (Method method : declaredMethods) {
-            method.setAccessible(true);
-            String methodName = method.getName();
-            if (methodName.startsWith("get") && method.getParameterCount() == 0
-                && (method.getReturnType().isInstance(Number.class) || method.getReturnType().isPrimitive())) {
-                try {
-                    Object value = method.invoke(bean);
-                    String fieldName = methodName.substring(3);
-                    if (value instanceof Number && !Double.isNaN(((Number) value).doubleValue())) {
-                        point.addField(fieldName, (Number) value);
-                    }
-                } catch (Exception e) {
-                    log.error("error accessing bean: {}:{}", bean, method);
-                    e.printStackTrace();
-                }
-            }
-        }
-        return point;
+    public void stopGenerator() {
+        dataGenerator.stopGenerator();
     }
 
-    public void stopWriteMetricsJob() {
-        running = false;
-        log.info("Stopping scheduler.");
-        executor.shutdown();
-    }
-
-    public boolean isRunningWrite() {
-        return running;
+    public boolean isGeneratorRunning() {
+        return dataGenerator.isRunning();
     }
 
     public String getOrgId() {
@@ -201,7 +108,6 @@ public class InfluxDBService {
             "  tag: \"" + tag + "\"\n" +
             ")";
 
-        System.out.println(q);
 
         return queryStringValues(q);
 
@@ -234,11 +140,7 @@ public class InfluxDBService {
             if (predicate != null) {
                 q += "  predicate: " + predicate + ",\n";
             }
-
             q += "  start: " + start + "\n" + ")";
-
-            System.out.println(q);
-
             ret.addAll(Arrays.asList(queryStringValues(q)));
 
         }
@@ -267,7 +169,6 @@ public class InfluxDBService {
         }
         q += "  start: " + start + "\n" + ")";
 
-        System.out.println(q);
         return queryStringValues(q);
 
     }
@@ -301,25 +202,15 @@ public class InfluxDBService {
 
     public String[] getFields(final String bucket, final Set<String> selectedMeasurements) {
 
-        final StringBuffer q = new StringBuffer();
-        q.append("from(bucket: \"").append(bucket).append("\")\n")
-            .append(
-                "  |> range(start: -5m, stop: now())\n");
-
-        //filter by measurement
-        q.append(createOrFilter("_measurement", selectedMeasurements));
-        q.append("  |> filter(fn: (r) => true)\n")
-            .append(
-                "  |> group(columns: [\"_field\"])\n")
-            .append(
-                "  |> distinct(column: \"_field\")\n")
-            .append(
-                "  |> keep(columns: [\"_value\"])\n")
-            .append(
-                "  |> limit(n: 200)\n").append(
-            "  |> sort()");
-
-        System.out.println(q);
+        String q = "from(bucket: \"" + bucket + "\")\n" +
+            "  |> range(start: -5m, stop: now())\n" +
+            createOrFilter("_measurement", selectedMeasurements) +
+            "  |> filter(fn: (r) => true)\n"
+            + "  |> group(columns: [\"_field\"])\n"
+            + "  |> distinct(column: \"_field\")\n"
+            + "  |> keep(columns: [\"_value\"])\n"
+            + "  |> limit(n: 200)\n"
+            + "  |> sort()";
 
         return queryStringValues(q.toString());
     }

@@ -11,6 +11,7 @@ import io.bonitoo.influxdemo.ui.AboutView;
 import io.bonitoo.influxdemo.ui.BrowseDataView;
 import io.bonitoo.influxdemo.ui.DashboardView;
 import io.bonitoo.influxdemo.ui.ExecuteFluxView;
+import io.bonitoo.influxdemo.ui.Overview;
 
 /**
  * The layout of the pages e.g. About and Inventory.
@@ -25,11 +26,12 @@ public class MainLayout extends FlexLayout implements RouterLayout {
         setSizeFull();
         setClassName("main-layout");
         menu = new Menu();
+        menu.addView(Overview.class, Overview.VIEW_NAME, VaadinIcon.AIRPLANE.create());
         menu.addView(DashboardView.class, DashboardView.VIEW_NAME, VaadinIcon.DASHBOARD.create());
         menu.addView(ExecuteFluxView.class, ExecuteFluxView.VIEW_NAME, VaadinIcon.EDIT.create());
         menu.addView(BrowseDataView.class, BrowseDataView.VIEW_NAME, VaadinIcon.SEARCH.create());
         menu.addView(AboutView.class, AboutView.VIEW_NAME, VaadinIcon.INFO_CIRCLE.create());
-//        menu.addView(TestView.class, TestView.VIEW_NAME, VaadinIcon.AIRPLANE.create());
+        menu.addLogout();
         add(menu);
     }
 }

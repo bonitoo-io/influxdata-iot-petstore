@@ -21,6 +21,8 @@ import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.charts.model.Configuration;
 import com.vaadin.flow.component.charts.model.DataSeries;
 import com.vaadin.flow.component.charts.model.DataSeriesItem;
+import com.vaadin.flow.component.charts.model.PlotOptionsArea;
+import com.vaadin.flow.component.charts.model.Stacking;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
@@ -33,6 +35,7 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import io.bonitoo.influxdemo.MainLayout;
 import io.bonitoo.influxdemo.services.InfluxDBService;
@@ -43,20 +46,22 @@ import org.vaadin.gatanaso.MultiselectComboBox;
 
 
 @Route(value = "Browse", layout = MainLayout.class)
+@PageTitle(value = "BrowseData")
 public class BrowseDataView extends HorizontalLayout {
 
     public static final String VIEW_NAME = "Browse";
 
     private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 
-    enum DisplayTypeEnum {
+    public enum DisplayType {
         //        raw,
-        grid,
-        chart
+        GRID,
+        CHART,
+        CHART_STACKED
     }
 
-    //display data as grid by default
-    private DisplayTypeEnum displayType = DisplayTypeEnum.chart;
+    //display data as GRID by default
+    private DisplayType displayType = DisplayType.CHART;
 
     private TextArea fluxTextArea;
     private TextField statusLabel;
@@ -64,10 +69,10 @@ public class BrowseDataView extends HorizontalLayout {
     private ComboBox<String> timeRangeBox;
     private MultiselectComboBox<String> measurementsCombo;
     private MultiselectComboBox<String> fieldsBox;
-    MultiselectComboBox<String> tagsKeysBox;
-    MultiselectComboBox<String> tagsValuesBox;
+    private MultiselectComboBox<String> tagsKeysBox;
+    private MultiselectComboBox<String> tagsValuesBox;
 
-    private ComboBox<DisplayTypeEnum> displayDataType;
+    private ComboBox<DisplayType> displayDataType;
 
     private Grid<FluxRecord> grid;
     private ProgressBar progressBar;
@@ -102,6 +107,7 @@ public class BrowseDataView extends HorizontalLayout {
         selectedBucket = influxDBService.getBucket();
 
         bucketBox = new ComboBox<>();
+        bucketBox.setWidth("100%");
         bucketBox.setItems(influxDBService.getBuckets());
         bucketBox.setLabel("Bucket");
         bucketBox.setValue(influxDBService.getBucket());
@@ -114,6 +120,7 @@ public class BrowseDataView extends HorizontalLayout {
 
         timeRangeBox = new ComboBox<>();
         timeRangeBox.setLabel("Time range");
+        timeRangeBox.setWidth("100%");
         timeRangeBox.setItems(getTimeRangeList());
         getTimeRangeList().findFirst().ifPresent(timeRangeBox::setValue);
         filterLayout.add(timeRangeBox);
@@ -184,8 +191,9 @@ public class BrowseDataView extends HorizontalLayout {
             executeFlux(resultLayout);
         });
 
-        displayDataType = new ComboBox<>("Display as", DisplayTypeEnum.values());
-        displayDataType.setValue(DisplayTypeEnum.grid);
+        displayDataType = new ComboBox<>("Display as", DisplayType.values());
+        displayDataType.setValue(displayType);
+        displayDataType.setWidth("100%");
         filterLayout.add(displayDataType);
         displayDataType.addValueChangeListener(event -> {
             displayType = event.getValue();
@@ -217,14 +225,6 @@ public class BrowseDataView extends HorizontalLayout {
 
         contentLayout.removeAll();
 
-        if (displayType == DisplayTypeEnum.grid) {
-            grid = new Grid<>(FluxRecord.class);
-            grid.setSizeFull();
-            grid.getColumnByKey("values").setVisible(false);
-            grid.getColumns().forEach(c -> c.setResizable(true));
-            contentLayout.add(grid);
-        }
-
         query = createFluxQuery();
 
 
@@ -234,8 +234,7 @@ public class BrowseDataView extends HorizontalLayout {
 
         List<FluxRecord> records = new ArrayList<>();
 
-        QueryApi queryClient =
-            InfluxDBService.getInstance().getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
 
         progressBar.setIndeterminate(true);
         progressBar.setVisible(true);
@@ -245,7 +244,7 @@ public class BrowseDataView extends HorizontalLayout {
 
         UI current = UI.getCurrent();
 
-        if (displayType == DisplayTypeEnum.grid) {
+        if (displayType == DisplayType.GRID) {
             queryClient.query(query, InfluxDBService.getInstance().getOrgId(),
 
                 (cancellable, record) -> {
@@ -258,16 +257,15 @@ public class BrowseDataView extends HorizontalLayout {
                     //on complete
                     log.info("Query completed.");
                     current.accessSynchronously(() -> {
-                        addToGrid(grid, records);
-                        notifyComplete(stopWatch, current);
+                        contentLayout.add(createGrid(records));
+                        notifyComplete(stopWatch, current, statusLabel, progressBar);
                     });
                 });
         }
-        if (displayType == DisplayTypeEnum.chart) {
+        if (displayType == DisplayType.CHART || displayType == DisplayType.CHART_STACKED) {
             List<FluxTable> result = queryClient.query(this.query, InfluxDBService.getInstance().getOrgId());
-            addToChart(contentLayout, result);
-            notifyComplete(stopWatch, current);
-
+            addToChart(contentLayout, result, displayType);
+            notifyComplete(stopWatch, current, statusLabel, progressBar);
         }
     }
 
@@ -281,12 +279,11 @@ public class BrowseDataView extends HorizontalLayout {
             statusLabel.setValue(error.getMessage());
             statusLabel.setInvalid(true);
             progressBar.setIndeterminate(false);
-//                    progressBar.setVisible(false);
             current.setPollInterval(-1);
         });
     }
 
-    private void notifyComplete(final StopWatch stopWatch, final UI current) {
+    static void notifyComplete(final StopWatch stopWatch, final UI current, TextField statusLabel, ProgressBar progressBar) {
         stopWatch.stop();
         statusLabel.setValue("Query completed. " + stopWatch.getTime());
         statusLabel.setInvalid(false);
@@ -294,11 +291,18 @@ public class BrowseDataView extends HorizontalLayout {
         current.setPollInterval(-1);
     }
 
-    private void addToChart(final VerticalLayout contentLayout, final List<FluxTable> tables) {
+    private void addToChart(final VerticalLayout contentLayout, final List<FluxTable> tables, DisplayType displayType) {
         final Chart chart = new Chart();
         final Configuration configuration = chart.getConfiguration();
-        configuration.getChart().setType(ChartType.SPLINE);
-        configuration.getTitle().setText("chart");
+        configuration.getChart().setType(ChartType.AREA);
+//        configuration.getChart().setType(ChartType.SPLINE);
+//        configuration.getTitle().setText("CHART");
+
+        if (displayType == DisplayType.CHART_STACKED) {
+            PlotOptionsArea plotOptions = new PlotOptionsArea();
+            plotOptions.setStacking(Stacking.NORMAL);
+            configuration.setPlotOptions(plotOptions);
+        }
 
         XAxis xAxis = configuration.getxAxis();
         xAxis.setType(AxisType.DATETIME);
@@ -308,13 +312,21 @@ public class BrowseDataView extends HorizontalLayout {
 
         for (FluxTable fluxTable : tables) {
             DataSeries dataSeries = new DataSeries();
+            if (displayType == DisplayType.CHART_STACKED) {
+                PlotOptionsArea plotOptions = new PlotOptionsArea();
+                plotOptions.setStacking(Stacking.NORMAL);
+                dataSeries.setConfiguration(new Configuration());
+                dataSeries.getConfiguration().setPlotOptions(plotOptions);
+            }
+
             dataSeries.setName(DashboardView.getSeriesName(fluxTable));
 
             configuration.addSeries(dataSeries);
             List<FluxRecord> records = fluxTable.getRecords();
             for (FluxRecord fluxRecord : records) {
                 if (fluxRecord.getTime() != null) {
-                    dataSeries.add(new DataSeriesItem(fluxRecord.getTime(), (Number) fluxRecord.getValue()));
+                    DataSeriesItem item = new DataSeriesItem(fluxRecord.getTime(), (Number) fluxRecord.getValue());
+                    dataSeries.add(item);
                 }
             }
         }
@@ -322,7 +334,12 @@ public class BrowseDataView extends HorizontalLayout {
         contentLayout.add(chart);
     }
 
-    static void addToGrid(final Grid<FluxRecord> grid, final List<FluxRecord> records) {
+    static Grid<FluxRecord> createGrid(final List<FluxRecord> records) {
+        Grid<FluxRecord> grid = new Grid<>(FluxRecord.class);
+        grid.setSizeFull();
+        grid.getColumnByKey("values").setVisible(false);
+        grid.getColumns().forEach(c -> c.setResizable(true));
+
         grid.setItems(records);
         if (records.size() > 0) {
             FluxRecord fluxRecord = records.get(0);
@@ -338,6 +355,8 @@ public class BrowseDataView extends HorizontalLayout {
                 }
             });
         }
+
+        return grid;
     }
 
     private String createFluxQuery() {

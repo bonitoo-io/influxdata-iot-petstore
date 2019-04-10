@@ -16,6 +16,7 @@ import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import io.bonitoo.influxdemo.MainLayout;
 import io.bonitoo.influxdemo.services.InfluxDBService;
@@ -24,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Route(value = "Execute", layout = MainLayout.class)
-
+@PageTitle(value = "Execute Flux")
 public class ExecuteFluxView extends HorizontalLayout {
 
     public static final String VIEW_NAME = "Execute Flux";
@@ -74,30 +75,19 @@ public class ExecuteFluxView extends HorizontalLayout {
             //todo replace parameters
             query = fluxTextArea.getValue()
                 .replace("timeRangeStart", "-30d");
-            executeFlux(query);
+            executeFlux(query, verticalLayout);
         });
 
         hl.add(fluxButton);
 
-
         progressBar = new ProgressBar();
-//        progressBar.setVisible(true);
         verticalLayout.add(progressBar);
-
-        grid = new Grid<>(FluxRecord.class);
-        grid.setSizeFull();
-        grid.getColumnByKey("values").setVisible(false);
-//        grid.getColumnByKey("start").setVisible(false);
-//        grid.getColumnByKey("stop").setVisible(false);
-
-        grid.getColumns().forEach(c -> c.setResizable(true));
-        verticalLayout.add(grid);
         add(verticalLayout);
 
-        executeFlux(query);
+        executeFlux(query, verticalLayout);
     }
 
-    private void executeFlux(String query) {
+    private void executeFlux(String query, VerticalLayout verticalLayout) {
 
         UI.getCurrent().setPollInterval(1000);
         StopWatch stopWatch = new StopWatch();
@@ -131,12 +121,13 @@ public class ExecuteFluxView extends HorizontalLayout {
                 log.info("Query completed.");
                 current.accessSynchronously(() -> {
 
-                    BrowseDataView.addToGrid(grid, records);
-                    stopWatch.stop();
-                    statusLabel.setValue("Query completed. " + stopWatch.getTime());
-                    statusLabel.setInvalid(false);
-                    progressBar.setIndeterminate(false);
-                    current.setPollInterval(-1);
+                    if (grid != null) {
+                        verticalLayout.remove(grid);
+                    }
+
+                    grid = BrowseDataView.createGrid(records);
+                    verticalLayout.add(grid);
+                    BrowseDataView.notifyComplete(stopWatch, current, statusLabel, progressBar);
                 });
 
             });
