@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/rhajek/influx-demo)
 
+
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
 It is a [Vaadin Flow](https://vaadin.com/flow) application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
@@ -53,3 +54,6 @@ Other basic workflow steps:
 - running in production mode
   - run `mvn jetty:run -Dvaadin.productionMode` in ui module
   - open http://localhost:8080/
+
+## Screenshot example
+![Example](doc/browse.png)
