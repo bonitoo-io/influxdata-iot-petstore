@@ -61,9 +61,8 @@ docker exec -it my-influxdb2 influx setup --username my-user --password my-passw
 
 ## show created orgId
 ORGID=`docker exec -it my-influxdb2 influx org find | grep my-org  | awk '{ print $1 }'`
-
-echo ORGID=$ORGID
-sed -i.backup 's|\s*influxdb.orgId\s*=.*$|influxdb.orgId='${ORGID}'|' ${SCRIPT_PATH}/../src/main/resources/demo-config.properties
-
 echo "orgId="${ORGID}
+
+sed -i.backup 's|\s*influxdb.orgId\s*=.*$|influxdb.orgId='${ORGID}'|' ${SCRIPT_PATH}/../src/main/resources/application.properties
+
 

@@ -5,8 +5,11 @@
 
 A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
 
-It is a [Vaadin Flow](https://vaadin.com/flow) application that only requires a Servlet 3.1 container to run (no other JEE dependencies). 
-The UI is built with Java only. 
+UI is implemented in [Vaadin Flow](https://vaadin.com/flow). Backend is integrated using [Spring Boot](https://spring.io/projects/spring-boot). 
+The UI is built with Java only. [Micrometer.io](https://micrometer.io/) framework is used for monitoring. Metrics from application are exposed in Prometheus format.
+
+TODO: 
+- Add InfluxDB2.0 support to micrometer-registry-influx 
 
 ## Prerequisites
 
@@ -26,7 +29,7 @@ by following command:
 docker run --rm --name my-influxdb2 --publish 9999:9999 quay.io/influxdb/influx:nightly
 ```
 
-InfluxDB must be initialized before first usage. The user and the organization setup can be done using command line:
+InfluxDB must be initialized before the first usage. The user and the organization setup can be done using command line:
 
 ```bash
 
@@ -38,11 +41,11 @@ docker exec -it my-influxdb2 influx setup --username my-user --password my-passw
 docker exec -it my-influxdb2 influx org find | grep my-org  | awk '{ print $1 }'
 
 ```
-In the configuration file `src/main/resources/demo-config.properties` put generated orgId into `influxdb.orgId` property.
+In the configuration file `src/main/resources/application.properties` put generated orgId into `influxdb.orgId` property.
 
 ## Workflow
 
-To compile the entire project, run "mvn install" in the parent project.
+To compile the entire project, run "mvn install" in the project directory.
 
 Other basic workflow steps:
 
@@ -50,10 +53,18 @@ Other basic workflow steps:
   - run `mvn jetty:run` in ui module
   - open http://localhost:8080/
 - creating a production mode war
-  - run `mvn package -Dvaadin.productionMode ` in the ui module or in the parent module
+  - run `mvn package -Dvaadin.productionMode ` 
 - running in production mode
-  - run `mvn jetty:run -Dvaadin.productionMode` in ui module
+  - run `mvn jetty:run -Dvaadin.productionMode` 
   - open http://localhost:8080/
 
+- running using spring-boot
+  - run `mvn spring-boot:run -Dvaadin.productionMode` 
+  - open http://localhost:8080/
+  
+  
+## Prometheus metrics
+-  http://localhost:8080/actuator/prometheus
+ 
 ## Screenshot example
 ![Example](doc/browse.png)

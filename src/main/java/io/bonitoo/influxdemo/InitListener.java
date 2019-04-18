@@ -2,10 +2,12 @@ package io.bonitoo.influxdemo;
 
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import io.bonitoo.influxdemo.authentication.AccessControl;
 import io.bonitoo.influxdemo.authentication.AccessControlFactory;
 import io.bonitoo.influxdemo.authentication.LoginScreen;
-import io.bonitoo.influxdemo.services.InfluxDBService;
+import io.bonitoo.influxdemo.services.DataGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * This class is used to listen to BeforeEnter event of all UIs in order to
@@ -13,25 +15,28 @@ import io.bonitoo.influxdemo.services.InfluxDBService;
  * It is registered in a file named
  * com.vaadin.flow.server.VaadinServiceInitListener in META-INF/services.
  */
+@SpringComponent
 public class InitListener implements VaadinServiceInitListener {
-    @Override
+
+    @Autowired
+    DataGenerator dataGenerator;
+
     public void serviceInit(ServiceInitEvent initEvent) {
 
         final AccessControl accessControl = AccessControlFactory.getInstance()
             .createAccessControl();
 
         initEvent.getSource().addServiceDestroyListener(event -> {
-            InfluxDBService.getInstance().stopGenerator();
-
+            dataGenerator.stopGenerator();
         });
 
         initEvent.getSource().addUIInitListener(uiInitEvent -> {
             uiInitEvent.getUI().addBeforeEnterListener(enterEvent -> {
                 //navigate to login
 
-                if (!accessControl.isUserSignedIn() && !LoginScreen.class
-                    .equals(enterEvent.getNavigationTarget()))
+                if (!accessControl.isUserSignedIn() && !LoginScreen.class.equals(enterEvent.getNavigationTarget())) {
                     enterEvent.rerouteTo(LoginScreen.class);
+                }
 
             });
         });

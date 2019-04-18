@@ -35,14 +35,15 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.shared.Registration;
 import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.services.DataGenerator;
 import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = DashboardView.VIEW_NAME, layout = MainLayout.class)
 @RouteAlias(value = "", layout = MainLayout.class)
 @PageTitle(value = "Dashboard")
-
 public class DashboardView extends VerticalLayout {
 
     private static Logger log = LoggerFactory.getLogger(DashboardView.class);
@@ -62,18 +63,24 @@ public class DashboardView extends VerticalLayout {
     private ComboBox<String> rangeCombo;
     private FluxChartSettings chartTemperatureSettings;
 
+    final
+    InfluxDBService influxDBService;
 
-    public DashboardView() {
+    final
+    DataGenerator dataGenerator;
+
+    @Autowired
+    public DashboardView(final InfluxDBService influxDBService, final DataGenerator dataGenerator) {
+        this.influxDBService = influxDBService;
+        this.dataGenerator = dataGenerator;
 
         setClassName("dashboard");
         setSizeFull();
 
-        InfluxDBService influxDBService = InfluxDBService.getInstance();
-
         statusLabel = new TextField();
         statusLabel.setWidth("90%");
         statusLabel.setEnabled(false);
-        statusLabel.setValue(influxDBService.isGeneratorRunning() ? "Running" : "Not running.");
+        statusLabel.setValue(dataGenerator.isRunning() ? "Running" : "Not running.");
         statusLabel.addThemeVariants(TextFieldVariant.LUMO_SMALL);
 
         add(statusLabel);
@@ -82,17 +89,17 @@ public class DashboardView extends VerticalLayout {
         hl.setWidth("100%");
         add(hl);
 
-        Button writeButton = new Button(influxDBService.isGeneratorRunning() ? "Stop write" : "Start write");
+        Button writeButton = new Button(dataGenerator.isRunning() ? "Stop write" : "Start write");
         writeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         writeButton.addClickListener(event ->
         {
-            if (influxDBService.isGeneratorRunning()) {
-                influxDBService.stopGenerator();
+            if (dataGenerator.isRunning()) {
+                dataGenerator.stopGenerator();
             } else {
-                influxDBService.startGenerator();
+                dataGenerator.startGenerator();
             }
-            statusLabel.setValue(influxDBService.isGeneratorRunning() ? "Running" : "Not running.");
-            writeButton.setText(influxDBService.isGeneratorRunning() ? "Stop write" : "Start write");
+            statusLabel.setValue(dataGenerator.isRunning() ? "Running" : "Not running.");
+            writeButton.setText(dataGenerator.isRunning() ? "Stop write" : "Start write");
         });
 
         rangeCombo = new ComboBox<>("Range start", rangeStartValues);
@@ -104,7 +111,7 @@ public class DashboardView extends VerticalLayout {
         add(writeButton);
         add(rangeCombo);
 
-        String bucketName = InfluxDBService.getInstance().getBucket();
+        String bucketName = influxDBService.getBucket();
         chartTemperatureSettings = new FluxChartSettings("Temperature", bucketName, "sensor",
             new String[]{"temperature"},
             new TagStructure[]{new TagStructure("location", "Prague", "San Francisco"),
@@ -114,7 +121,7 @@ public class DashboardView extends VerticalLayout {
         chartTemperature = createChart(chartTemperatureSettings);
 
 
-        chartTemperature.setWidth("80%");
+//        chartTemperature.setWidth("80%");
         chartTemperature.setHeight("400px");
 
         chartHumiditySettings = new FluxChartSettings("Humidity", bucketName, "sensor",
@@ -127,25 +134,24 @@ public class DashboardView extends VerticalLayout {
         chartHumidity = createChart(chartHumiditySettings);
 
 
-        chartHumidity.setWidth("80%");
+//        chartHumidity.setWidth("80%");
         chartHumidity.setHeight("400px");
 
 
         osBeanChartSettings = new FluxChartSettings("CPU", bucketName, "operatingSystemMXBean",
             new String[]{"SystemCpuLoad", "ProcessCpuLoad"}, null, null, 0, ChartType.SPLINE);
         osBeanChart = createChart(osBeanChartSettings);
-        osBeanChart.setWidth("80%");
+//        osBeanChart.setWidth("80%");
         osBeanChart.setHeight("400px");
 
         memBeanChartSettings = new FluxChartSettings("Memory", bucketName, "memoryMXBean",
             new String[]{"HeapMemoryUsage.max", "HeapMemoryUsage.used"}, null, null, 0, ChartType.AREA);
         memBeanChart = createChart(memBeanChartSettings);
         memBeanChart.setHeight("400px");
-        memBeanChart.setWidth("80%");
+//        memBeanChart.setWidth("80%");
 
 
-        add(osBeanChart, memBeanChart, chartTemperature, chartHumidity);
-
+        add(chartTemperature, chartHumidity, osBeanChart, memBeanChart);
 
     }
 
@@ -183,7 +189,7 @@ public class DashboardView extends VerticalLayout {
 
     private Chart createChart(FluxChartSettings fs) {
 
-        QueryApi queryClient = InfluxDBService.getInstance().getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
 
         final Chart chart = new Chart();
 
@@ -231,10 +237,10 @@ public class DashboardView extends VerticalLayout {
 
     private List<FluxTable> queryInfluxDB(String query) {
 
-        QueryApi queryClient = InfluxDBService.getInstance().getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
 
         try {
-            return queryClient.query(query, InfluxDBService.getInstance().getOrgId());
+            return queryClient.query(query, influxDBService.getOrgId());
         } catch (Exception e) {
 
             Notification notification = new Notification(

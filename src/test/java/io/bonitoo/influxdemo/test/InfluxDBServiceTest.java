@@ -25,30 +25,39 @@ import org.influxdata.query.dsl.functions.restriction.Restrictions;
 import io.bonitoo.influxdemo.entities.Sensor;
 import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.assertj.core.api.Assertions;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+
+@RunWith(SpringRunner.class)
+@SpringBootTest (classes = InfluxDBService.class)
+@EnableConfigurationProperties
 
 public class InfluxDBServiceTest {
     private static Logger log = Logger.getLogger(InfluxDBServiceTest.class.getName());
 
+    @Autowired
+    InfluxDBService influxDBService;
 
-    @BeforeClass
-    public static void beforeClass () {
-
-        InfluxDBService influxDBService = InfluxDBService.getInstance(false);
-        influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
-
+    @Before
+    public  void enableLogging () {
+       influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
     }
 
     @Test
     public void testInfluxDBService() {
 
-        InfluxDBService influxDBService = InfluxDBService.getInstance(false);
         QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
 
         Flux query = Flux.from(influxDBService.getBucket())
-            .filter(Restrictions.measurement().equal("sensor"))
-            .range(-1L, ChronoUnit.HOURS);
+            .range(-10l, ChronoUnit.MINUTES)
+            .filter(Restrictions.measurement().equal("sensor"));
+
 
         List<FluxTable> query1 = queryApi.query(query.toString(), influxDBService.getOrgId());
 
@@ -58,7 +67,6 @@ public class InfluxDBServiceTest {
     @Test
     public void testWritePoint() {
 
-        InfluxDBService influxDBService = InfluxDBService.getInstance(false);
         influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
         WriteApi writeApi = influxDBService.getPlatformClient().getWriteApi();
 
@@ -84,7 +92,6 @@ public class InfluxDBServiceTest {
 
     @Test
     public void testQueryParametrized() {
-        InfluxDBService influxDBService = InfluxDBService.getInstance();
 
         influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
         QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
@@ -110,7 +117,6 @@ public class InfluxDBServiceTest {
 
     @Test
     public void testQuery() {
-        InfluxDBService influxDBService = InfluxDBService.getInstance();
 
         influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
         QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
@@ -191,12 +197,9 @@ public class InfluxDBServiceTest {
         }
     }
 
-    InfluxDBService getInfluxDBService() {
-        return InfluxDBService.getInstance(false);
-    }
 
     public QueryApi getQueryApi() {
-        return getInfluxDBService().getPlatformClient().getQueryApi();
+        return influxDBService.getPlatformClient().getQueryApi();
     }
 
 }

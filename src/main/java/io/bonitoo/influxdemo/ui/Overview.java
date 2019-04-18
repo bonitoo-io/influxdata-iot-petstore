@@ -31,7 +31,7 @@ public class Overview extends VerticalLayout {
         {
             UnorderedList ul = new UnorderedList();
             add(ul);
-            ul.add(addMenuItem("Data generator"));
+            ul.add(addMenuItemLink("Data generator","DataGenerator.java","https://github.com/rhajek/influx-demo/blob/master/src/main/java/io/bonitoo/influxdemo/services/DataGenerator.java"));
             ul.add(addMenuItem("Import of data from external sources such as csv"));
             ul.add(addMenuItem("~Aggregator from devices~"));
         }
@@ -40,8 +40,8 @@ public class Overview extends VerticalLayout {
         {
             UnorderedList ul = new UnorderedList();
             add(ul);
-            ul.add(addMenuItemLink("How to write metrics using Java","https://github.com/bonitoo-io/influxdb-client-java#writes-and-queries-in-influxdb-20"));
-            ul.add(addMenuItemLink("How to write metrics using Python", "https://github.com/influxdata/influxdb-python"));
+            ul.add(addMenuItemLink("How to write metrics using Java","influxdb-client-java", "https://github.com/bonitoo-io/influxdb-client-java#writes-and-queries-in-influxdb-20"));
+            ul.add(addMenuItemLink("How to write metrics using Python", "influxdb-python", "https://github.com/influxdata/influxdb-python"));
             ul.add(addMenuItem("telegraf on IoT device with special output plugin"));
             ul.add(addMenuItem("How to onboard/register new IoT device"));
         }
@@ -73,12 +73,12 @@ public class Overview extends VerticalLayout {
 
     }
 
-    private Component addMenuItemLink(final String s, final String link) {
+    private Component addMenuItemLink(final String s, final String text, final String href) {
         ListItem li = new ListItem(s);
 
-        if (link != null) {
+        if (href != null) {
             li.add(new Span(" | "));
-            Anchor routerLink = new Anchor(link, link);
+            Anchor routerLink = new Anchor(href, text);
             routerLink.setTarget("_blank");
             li.add(routerLink);
         }

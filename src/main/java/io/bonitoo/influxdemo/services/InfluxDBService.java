@@ -1,86 +1,61 @@
 package io.bonitoo.influxdemo.services;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
+import javax.annotation.PostConstruct;
 
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.InfluxDBClientFactory;
 import org.influxdata.query.FluxTable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Service;
 
+@Service
+@ConfigurationProperties ("influxdb")
 public class InfluxDBService {
 
-    private static Logger log = LoggerFactory.getLogger(InfluxDBService.class);
-    private static String DEMO_CONFIG_FILE = "demo-config.properties";
-
-    private static InfluxDBService instance;
     private InfluxDBClient platformClient;
-    static private boolean running;
 
+    private String token;
     private String orgId;
     private String bucket;
-    private DataGenerator dataGenerator;
+    private String url;
 
-    public static synchronized InfluxDBService getInstance() {
-        if (instance == null) {
-            instance = new InfluxDBService();
-        }
-        return instance;
+    public String getToken() {
+        return token;
     }
 
-    public static synchronized InfluxDBService getInstance(boolean startJob) {
-        if (instance == null) {
-            instance = new InfluxDBService(startJob);
-        }
-        return instance;
+    public void setToken(final String token) {
+        this.token = token;
     }
 
-    private InfluxDBService() {
-        this(true);
+    public void setOrgId(final String orgId) {
+        this.orgId = orgId;
     }
 
-    Properties p = new Properties();
+    public void setBucket(final String bucket) {
+        this.bucket = bucket;
+    }
 
-    public InfluxDBService(final boolean startJob) {
+    public String getUrl() {
+        return url;
+    }
 
-        try {
-            log.info("Loading {}", DEMO_CONFIG_FILE);
-            p.load(InfluxDBService.class.getClassLoader().getResourceAsStream(DEMO_CONFIG_FILE));
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read " + DEMO_CONFIG_FILE, e);
-        }
+    public void setUrl(final String url) {
+        this.url = url;
+    }
 
-        final char[] authToken = p.getProperty("influxdb.token").toCharArray();
-        String url = p.getProperty("influxdb.baseUrl", "http://localhost:9999");
-        orgId = p.getProperty("influxdb.orgId");
-        bucket = p.getProperty("influxdb.bucket");
-        platformClient = InfluxDBClientFactory.create(url, authToken);
-        this.dataGenerator = new DataGenerator(this);
-
-        startGenerator();
+    @PostConstruct
+    void init() {
+        platformClient = InfluxDBClientFactory.create(url, token.toCharArray());
     }
 
     public InfluxDBClient getPlatformClient() {
         return platformClient;
-    }
-
-    public void startGenerator() {
-        dataGenerator.startGenerator();
-    }
-
-    public void stopGenerator() {
-        dataGenerator.stopGenerator();
-    }
-
-    public boolean isGeneratorRunning() {
-        return dataGenerator.isRunning();
     }
 
     public String getOrgId() {
@@ -191,7 +166,7 @@ public class InfluxDBService {
     }
 
     private String[] queryStringValues(final String q) {
-        List<FluxTable> result = InfluxDBService.getInstance().getPlatformClient().getQueryApi().query(q, orgId);
+        List<FluxTable> result = getPlatformClient().getQueryApi().query(q, orgId);
 
         if (result.isEmpty()) {
             return new String[0];

@@ -42,6 +42,7 @@ import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.gatanaso.MultiselectComboBox;
 
 
@@ -82,9 +83,13 @@ public class BrowseDataView extends HorizontalLayout {
     private Set<String> selectedTags = new TreeSet<>();
     private String query = "";
 
-    private InfluxDBService influxDBService = InfluxDBService.getInstance();
+//    @Autowired
+    private InfluxDBService influxDBService;
 
-    public BrowseDataView() {
+    @Autowired
+    public BrowseDataView(InfluxDBService influxDBService) {
+
+        this.influxDBService = influxDBService;
 
         setSizeFull();
 
@@ -104,16 +109,16 @@ public class BrowseDataView extends HorizontalLayout {
         splitLayout.setSecondaryStyle("minWidth", "200px");
         splitLayout.setSecondaryStyle("maxWidth", "350px");
 
-        selectedBucket = influxDBService.getBucket();
+        selectedBucket = this.influxDBService.getBucket();
 
         bucketBox = new ComboBox<>();
         bucketBox.setWidth("100%");
-        bucketBox.setItems(influxDBService.getBuckets());
+        bucketBox.setItems(this.influxDBService.getBuckets());
         bucketBox.setLabel("Bucket");
-        bucketBox.setValue(influxDBService.getBucket());
+        bucketBox.setValue(this.influxDBService.getBucket());
         bucketBox.addValueChangeListener(e -> {
             selectedBucket = e.getValue();
-            measurementsCombo.setItems(influxDBService.getMeasurements(selectedBucket));
+            measurementsCombo.setItems(this.influxDBService.getMeasurements(selectedBucket));
         });
 
         filterLayout.add(bucketBox);
@@ -127,19 +132,19 @@ public class BrowseDataView extends HorizontalLayout {
 
         measurementsCombo = new MultiselectComboBox<>();
         measurementsCombo.setLabel("Measurements");
-        measurementsCombo.setItems(influxDBService.getMeasurements(selectedBucket));
+        measurementsCombo.setItems(this.influxDBService.getMeasurements(selectedBucket));
 
         filterLayout.add(measurementsCombo);
 
         fieldsBox = new MultiselectComboBox<>();
         fieldsBox.setLabel("Fields");
-        fieldsBox.setItems(InfluxDBService.getInstance().getFields(selectedBucket, selectedMeasurements));
+        fieldsBox.setItems(influxDBService.getFields(selectedBucket, selectedMeasurements));
         filterLayout.add(fieldsBox);
 
         measurementsCombo.addValueChangeListener(event -> {
             selectedMeasurements = event.getValue();
-            fieldsBox.setItems(influxDBService.getFields(selectedBucket, selectedMeasurements));
-            tagsKeysBox.setItems(influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
+            fieldsBox.setItems(this.influxDBService.getFields(selectedBucket, selectedMeasurements));
+            tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
 
         });
 
@@ -148,10 +153,10 @@ public class BrowseDataView extends HorizontalLayout {
         tagsValuesBox = new MultiselectComboBox<>();
 
         tagsKeysBox.setLabel("Tags");
-        tagsKeysBox.setItems(influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
+        tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
         tagsKeysBox.addValueChangeListener(event -> {
             selectedTags = event.getValue();
-            tagsValuesBox.setItems(influxDBService.getTagValues(selectedBucket, tagsKeysBox.getSelectedItems(),
+            tagsValuesBox.setItems(this.influxDBService.getTagValues(selectedBucket, tagsKeysBox.getSelectedItems(),
                 rangeValue(timeRangeBox.getValue()), null));
         });
 
@@ -245,7 +250,7 @@ public class BrowseDataView extends HorizontalLayout {
         UI current = UI.getCurrent();
 
         if (displayType == DisplayType.GRID) {
-            queryClient.query(query, InfluxDBService.getInstance().getOrgId(),
+            queryClient.query(query, influxDBService.getOrgId(),
 
                 (cancellable, record) -> {
                     records.add(record);
@@ -263,7 +268,7 @@ public class BrowseDataView extends HorizontalLayout {
                 });
         }
         if (displayType == DisplayType.CHART || displayType == DisplayType.CHART_STACKED) {
-            List<FluxTable> result = queryClient.query(this.query, InfluxDBService.getInstance().getOrgId());
+            List<FluxTable> result = queryClient.query(this.query, influxDBService.getOrgId());
             addToChart(contentLayout, result, displayType);
             notifyComplete(stopWatch, current, statusLabel, progressBar);
         }
@@ -295,8 +300,6 @@ public class BrowseDataView extends HorizontalLayout {
         final Chart chart = new Chart();
         final Configuration configuration = chart.getConfiguration();
         configuration.getChart().setType(ChartType.AREA);
-//        configuration.getChart().setType(ChartType.SPLINE);
-//        configuration.getTitle().setText("CHART");
 
         if (displayType == DisplayType.CHART_STACKED) {
             PlotOptionsArea plotOptions = new PlotOptionsArea();
@@ -325,8 +328,11 @@ public class BrowseDataView extends HorizontalLayout {
             List<FluxRecord> records = fluxTable.getRecords();
             for (FluxRecord fluxRecord : records) {
                 if (fluxRecord.getTime() != null) {
-                    DataSeriesItem item = new DataSeriesItem(fluxRecord.getTime(), (Number) fluxRecord.getValue());
-                    dataSeries.add(item);
+                    Object value = fluxRecord.getValue();
+                    if (value instanceof  Number) {
+                        DataSeriesItem item = new DataSeriesItem(fluxRecord.getTime(), (Number) value);
+                        dataSeries.add(item);
+                    }
                 }
             }
         }

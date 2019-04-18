@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -33,7 +32,6 @@ public class LoginScreen extends FlexLayout {
     private TextField username;
     private PasswordField password;
     private Button login;
-    private Button forgotPassword;
     private AccessControl accessControl;
 
     public LoginScreen() {
@@ -86,7 +84,8 @@ public class LoginScreen extends FlexLayout {
         loginForm.getElement().addEventListener("keypress", event -> login()).setFilter("event.key == 'Enter'");
         login.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_PRIMARY);
 
-        buttons.add(forgotPassword = new Button("Forgot password?"));
+        Button forgotPassword = new Button("Forgot password?");
+        buttons.add(forgotPassword );
         forgotPassword.addClickListener(event -> showNotification(new Notification("Hint: try anything")));
         forgotPassword.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 

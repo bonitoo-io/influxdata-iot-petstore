@@ -23,6 +23,7 @@ import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(value = "Execute", layout = MainLayout.class)
 @PageTitle(value = "Execute Flux")
@@ -32,21 +33,26 @@ public class ExecuteFluxView extends HorizontalLayout {
 
     private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 
+    private InfluxDBService influxDBService;
+
     private TextArea fluxTextArea;
     private TextField statusLabel;
-
-    private String query = "from(bucket: \"" + InfluxDBService.getInstance().getBucket() + "\")\n" +
-        "  |> range(start: -1d)\n" +
-        "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
-        "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
-        "  |> limit(n: 10, offset: 1)";
 
 
     private Grid<FluxRecord> grid;
     private ProgressBar progressBar;
+    private String query;
 
+    @Autowired
+    public ExecuteFluxView(InfluxDBService influxDBService ) {
+        this.influxDBService = influxDBService;
 
-    public ExecuteFluxView() {
+        query = "from(bucket: \"" + influxDBService.getBucket() + "\")\n" +
+            "  |> range(start: -1d)\n" +
+            "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
+            "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
+            "  |> limit(n: 10, offset: 1)";
+
         setSizeFull();
         VerticalLayout verticalLayout = new VerticalLayout();
         fluxTextArea = new TextArea();
@@ -96,7 +102,7 @@ public class ExecuteFluxView extends HorizontalLayout {
         List<FluxRecord> records = new ArrayList<>();
 
         QueryApi queryClient =
-            InfluxDBService.getInstance().getPlatformClient().getQueryApi();
+            influxDBService.getPlatformClient().getQueryApi();
 
         progressBar.setIndeterminate(true);
         progressBar.setVisible(true);
@@ -106,7 +112,7 @@ public class ExecuteFluxView extends HorizontalLayout {
 
         UI current = UI.getCurrent();
 
-        queryClient.query(query, InfluxDBService.getInstance().getOrgId(),
+        queryClient.query(query, influxDBService.getOrgId(),
 
             (cancellable, record) -> {
                 records.add(record);
