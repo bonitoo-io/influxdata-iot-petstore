@@ -36,7 +36,7 @@ public class Overview extends VerticalLayout {
             ul.add(addMenuItem("~Aggregator from devices~"));
         }
 
-        add(new H3("B. IoT Device"));
+        add(new H3("B. IoT OnboardingResponse"));
         {
             UnorderedList ul = new UnorderedList();
             add(ul);

@@ -11,6 +11,7 @@ import io.bonitoo.influxdemo.ui.AboutView;
 import io.bonitoo.influxdemo.ui.BrowseDataView;
 import io.bonitoo.influxdemo.ui.DashboardView;
 import io.bonitoo.influxdemo.ui.ExecuteFluxView;
+import io.bonitoo.influxdemo.ui.MyDevicesView;
 import io.bonitoo.influxdemo.ui.Overview;
 
 /**
@@ -30,6 +31,7 @@ public class MainLayout extends FlexLayout implements RouterLayout {
         menu.addView(DashboardView.class, DashboardView.VIEW_NAME, VaadinIcon.DASHBOARD.create());
         menu.addView(ExecuteFluxView.class, ExecuteFluxView.VIEW_NAME, VaadinIcon.EDIT.create());
         menu.addView(BrowseDataView.class, BrowseDataView.VIEW_NAME, VaadinIcon.SEARCH.create());
+        menu.addView(MyDevicesView.class, MyDevicesView.VIEW_NAME, VaadinIcon.CONNECT_O.create());
         menu.addView(AboutView.class, AboutView.VIEW_NAME, VaadinIcon.INFO_CIRCLE.create());
         menu.addLogout();
         add(menu);
