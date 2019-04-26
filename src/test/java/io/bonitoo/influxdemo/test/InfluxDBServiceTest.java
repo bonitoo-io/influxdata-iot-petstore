@@ -108,7 +108,6 @@ public class InfluxDBServiceTest {
             .filter(Restrictions.column("sid").equal("sensor3"))
             .limit().withN(10);
         //.withPropertyValue("offset", 1l)
-        ;
 
         System.out.println(flux);
         List<FluxTable> query = queryApi.query(flux.toString(properties), influxDBService.getOrgId());
@@ -137,10 +136,11 @@ public class InfluxDBServiceTest {
         listenerRegistration.dispose();
 
         Flux query = Flux.from(influxDBService.getBucket())
+            .range(-1L, ChronoUnit.HOURS)
             .filter(Restrictions.measurement().equal("sensor"))
             .filter(Restrictions.tag("sid").equal("test-sid"))
             .filter(Restrictions.tag("location").equal("Prague"))
-            .range(-1L, ChronoUnit.HOURS).last();
+            .last();
 
         List<FluxTable> query1 = queryApi.query(query.toString(), influxDBService.getOrgId());
 
