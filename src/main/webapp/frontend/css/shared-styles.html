@@ -3,7 +3,11 @@
   -- (mainly to support IE11)
   -- for more information see: https://cdn.vaadin.com/vaadin-lumo-styles/1.3.1/demo/compatibility.html
   -->
+
+<link rel="import" href="../bower_components/vaadin-lumo-styles/all-imports.html">
+
 <!-- Remember to import custom-style, which is included in the Polymer package -->
+
 <link rel="import"
       href="../bower_components/polymer/lib/elements/custom-style.html">
 
@@ -17,11 +21,20 @@
 
         .tiny {
             font-size: x-small;
-            white-space: pre;
-            word-wrap: break-word
         }
+
+        .influxdb-status-pass {
+            color: var(--lumo-success-color);
+        }
+
+        .influxdb-status-fail {
+            color: var(--lumo-error-color);
+        }
+
         .monospace {
             font-family: 'SF Mono', 'Roboto Mono', 'Source Code Pro', monospace;
+            white-space: pre;
+            word-wrap: break-word
         }
 
         .login-information {

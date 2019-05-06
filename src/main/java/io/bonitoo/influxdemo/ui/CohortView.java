@@ -10,6 +10,8 @@ import io.bonitoo.influxdemo.MainLayout;
 @PageTitle(value = "Cohort")
 public class CohortView extends VerticalLayout {
 
+    public static final String VIEW_NAME = "Cohort";
+
     public CohortView() {
 
         add(new H3("TODO"));

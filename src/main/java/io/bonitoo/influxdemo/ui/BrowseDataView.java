@@ -340,7 +340,7 @@ public class BrowseDataView extends HorizontalLayout {
         contentLayout.add(chart);
     }
 
-    static Grid<FluxRecord> createGrid(final List<FluxRecord> records) {
+    public static Grid<FluxRecord> createGrid(final List<FluxRecord> records) {
         Grid<FluxRecord> grid = new Grid<>(FluxRecord.class);
         grid.setSizeFull();
         grid.getColumnByKey("values").setVisible(false);

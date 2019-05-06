@@ -8,8 +8,6 @@ public class DeviceTest {
     public void testDevice() throws Exception {
 
         Device device = new Device();
-        device.start();
-
         Thread.sleep(10000L);
 
         device.shutdown();

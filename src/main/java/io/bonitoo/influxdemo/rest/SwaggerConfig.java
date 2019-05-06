@@ -23,7 +23,9 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
             .select().apis(RequestHandlerSelectors.basePackage("io.bonitoo.influxdemo.rest"))
             .paths(regex("/api.*"))
-            .build().apiInfo(metaData());
+
+            .build().apiInfo(metaData())
+            .useDefaultResponseMessages(false);
     }
 
     private ApiInfo metaData() {

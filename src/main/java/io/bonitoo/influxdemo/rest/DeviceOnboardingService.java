@@ -26,7 +26,7 @@ public class DeviceOnboardingService {
 
     private final InfluxDBService influxDBService;
 
-    static Logger log = LoggerFactory.getLogger(DeviceOnboardingService.class);
+    private static Logger log = LoggerFactory.getLogger(DeviceOnboardingService.class);
 
     private final DeviceRegistryService deviceRegistry;
 
@@ -41,6 +41,7 @@ public class DeviceOnboardingService {
         value = "Register the new device into IoT Hub",
         notes = "Returns configuration for device, including influxdb authToken, bucket name, orgId.",
         response = OnboardingResponse.class)
+
     @ApiResponses(
         value = {
             @ApiResponse(code = 200, message = "Successful retrieval of device registration", response = OnboardingResponse.class),
@@ -50,7 +51,7 @@ public class DeviceOnboardingService {
             @ApiResponse(code = 500, message = "Internal server error")
         }
     )
-    public ResponseEntity<OnboardingResponse> registerDevice(@PathVariable String id) {
+    public ResponseEntity registerDevice(@PathVariable String id) {
 
         log.info("register device request for {}", id);
 
@@ -62,24 +63,20 @@ public class DeviceOnboardingService {
 
         //first registration
         if (!deviceInfo.isPresent()) {
-
             deviceRegistry.registerDevice(id);
-//            OnboardingResponse or = new OnboardingResponse();
-//            or.setDeviceId(id);
-            return new ResponseEntity<>(null, HttpStatus.CREATED);
-
+            return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
         DeviceInfo info = deviceInfo.get();
 
         //pending authorization
         if (info.authToken == null) {
-            return new ResponseEntity<>(null, HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
         //device is already authorized
         if (info.authorized) {
-            return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
         //return onboarding request with authtoken
@@ -94,7 +91,7 @@ public class DeviceOnboardingService {
 
         info.authorized = true;
 
-        return new ResponseEntity<>(resp, HttpStatus.OK);
+        return  ResponseEntity.ok(resp);
 
     }
 

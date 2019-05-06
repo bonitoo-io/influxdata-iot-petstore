@@ -1,6 +1,8 @@
 package io.bonitoo.influxdemo.ui;
 
 
+import java.util.List;
+
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
@@ -14,6 +16,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -38,7 +41,6 @@ public class MyDevicesView extends VerticalLayout {
     private DeviceRegistryService deviceRegistryService;
 
     Grid<DeviceInfo> deviceGrid;
-
 
     @Autowired
     public MyDevicesView(DeviceRegistryService deviceRegistryService) {
@@ -91,6 +93,27 @@ public class MyDevicesView extends VerticalLayout {
 
 
         deviceGrid = new Grid<>();
+
+        DataProvider<DeviceInfo, Void> dataProvider = DataProvider.fromCallbacks(
+            // First callback fetches items based on a query
+            query -> {
+                // The index of the first item to load
+                int offset = query.getOffset();
+
+                // The number of items to load
+                int limit = query.getLimit();
+
+                List<DeviceInfo> persons = deviceRegistryService
+                    .getDeviceInfos(offset, limit);
+
+                return persons.stream();
+            },
+            // Second callback fetches the number of items for a query
+            query -> deviceRegistryService.getDeviceInfos().size());
+
+        deviceGrid.setDataProvider(dataProvider);
+
+
         deviceGrid.addColumn(cr).setHeader("Device Number").setWidth("20%");
         deviceGrid.addColumn(authIconColumn).setHeader("Authorized").setWidth("10%");
         deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("50%");
@@ -142,7 +165,7 @@ public class MyDevicesView extends VerticalLayout {
 
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");
-                deviceGrid.setItems(deviceRegistryService.getDeviceInfos());
+                deviceGrid.getDataProvider().refreshAll();
             });
 
             ui.addDetachListener(l -> {

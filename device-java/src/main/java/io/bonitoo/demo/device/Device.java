@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.influxdata.client.InfluxDBClient;
@@ -26,50 +27,19 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 
+
 public class Device {
 
-    private long interval = 1000L;
-
-    private class OnboardingResponse {
-        private String deviceId;
-        private String url;
-        private String orgId;
-        private String authToken;
-        private String bucket;
-    }
-
     private static Logger log = Logger.getLogger(Device.class.getName());
-
+    private long interval = 1000L;
     //iot hub url
     private String url = "http://localhost:8080/api";
-
     private String deviceNumber = "G3D5-34FG-PRE1-S3AP";
     private OkHttpClient client;
-
     private OnboardingResponse config;
     private InfluxDBClient influxDBClient;
     private WriteApi writeApi;
     private ScheduledExecutorService executor;
-
-
-    //
-    public static void main(String[] args) {
-        Device device = new Device();
-        device.start();
-
-        while (!device.executor.isTerminated()) {
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException ignored) {
-            }
-        }
-
-    }
-
-    public void start() {
-        executor = Executors.newScheduledThreadPool(0);
-        executor.scheduleAtFixedRate(this::run, 0, interval, TimeUnit.MILLISECONDS);
-    }
 
     public Device() {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
@@ -77,40 +47,63 @@ public class Device {
         client = new OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .build();
+        startScheduler();
+    }
+
+
+    public Device(String jsonConfig) {
+        this();
+        setupDevice(jsonConfig);
+        startScheduler();
+    }
+
+    //
+    public static void main(String[] args) {
+        Device device = new Device();
+
+        while (!device.executor.isTerminated()) {
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
+    private static double random(double rangeMin, double rangeMax) {
+        Random r = new Random();
+        return rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+    }
+
+    private void startScheduler() {
+        executor = Executors.newScheduledThreadPool(0);
+        executor.scheduleAtFixedRate(this::run, 0, interval, TimeUnit.MILLISECONDS);
     }
 
     /**
-     * Returns true, when device is registered and authorized.
+     * Device registration and authorization
      */
-    private boolean register() {
+    private void register() {
         Request request = new Request.Builder().url(url + "/register/" + deviceNumber).build();
-
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             assert response.body() != null;
-            String body = response.body().string();
-            System.out.println("Registration response status: " + code + " : " + body);
-
+            String jsonBody = response.body().string();
+            log.log(Level.FINE, "Registration response status: " + code + " : " + jsonBody);
             switch (code) {
-                case 202: {
-                    log.info("");
-                    return false;
-                }
-
-                case 201: {
-                    log.info("Waiting for authorization");
-                    return false;
-                }
                 case 200: {
-                    setupDevice(body);
-                    return true;
+                    setupDevice(jsonBody);
+                    return;
+                }
+                case 201: {
+                    log.info("Waiting for device authorization.. " + response.message());
+                    return;
+                }
+                default: {
+                    log.info("Device registration error " + code + ". " + response.message());
                 }
             }
-            return false;
-
         } catch (IOException e) {
-            System.out.println("Register device failed: " + e.getLocalizedMessage());
-            return false;
+            log.log(Level.SEVERE, "Register device failed: " + e.getLocalizedMessage());
         }
     }
 
@@ -121,7 +114,7 @@ public class Device {
 
         influxDBClient = InfluxDBClientFactory.create(config.url, config.authToken.toCharArray());
         writeApi = influxDBClient.getWriteApi();
-        writeApi.listenEvents(WriteSuccessEvent.class, (value) -> log.info("Write success."));
+        writeApi.listenEvents(WriteSuccessEvent.class, (value) -> log.info("Write success. " + value.getLineProtocol()));
         writeApi.listenEvents(WriteErrorEvent.class, (value) -> {
             log.info("Write error " + value.getThrowable().getLocalizedMessage());
             config = null;
@@ -132,13 +125,11 @@ public class Device {
 
     private void run() {
 
-        if (config == null || config.authToken == null) {
-            boolean success = register();
-            if (!success) {
-                return;
-            }
+        if (config == null) {
+            register();
+        } else {
+            writeApi.writePoints(config.bucket, config.orgId, getMetrics());
         }
-        writeApi.writePoints(config.bucket, config.orgId, getMetrics());
     }
 
     public void shutdown() {
@@ -159,8 +150,11 @@ public class Device {
         return Collections.singletonList(p);
     }
 
-    private static double random(double rangeMin, double rangeMax) {
-        Random r = new Random();
-        return rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+    private class OnboardingResponse {
+        private String deviceId;
+        private String url;
+        private String orgId;
+        private String authToken;
+        private String bucket;
     }
 }

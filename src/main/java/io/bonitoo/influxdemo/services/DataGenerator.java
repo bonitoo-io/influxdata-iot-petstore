@@ -2,6 +2,7 @@ package io.bonitoo.influxdemo.services;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -61,7 +62,7 @@ public class DataGenerator {
 
 
     @Scheduled(cron = "${jobs.dataGenerator.cronSchedule:-}")
-    private void writeMeasurements() {
+    void writeMeasurements() {
 
         if (!running) {
             return;
@@ -107,11 +108,11 @@ public class DataGenerator {
             }
 
             log.info("Write JMX data");
-            Point operatingSystemMXBeanPoint = buildPointFromBean(ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean");
+            Point operatingSystemMXBeanPoint = buildPointFromBean(com.sun.management.OperatingSystemMXBean.class, ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean");
             operatingSystemMXBeanPoint.addTag("host", hostName);
             writeClient.writePoint(bucket, orgId, operatingSystemMXBeanPoint);
 
-            Point runtimeMXBeanPoint = buildPointFromBean(ManagementFactory.getRuntimeMXBean(), "runtimeMXBean");
+            Point runtimeMXBeanPoint = buildPointFromBean(RuntimeMXBean.class, ManagementFactory.getRuntimeMXBean(), "runtimeMXBean");
             runtimeMXBeanPoint.addTag("host", hostName);
             writeClient.writePoint(bucket, orgId, runtimeMXBeanPoint);
 
@@ -129,16 +130,16 @@ public class DataGenerator {
     /**
      * Creates Point structure for generic java bean using reflections. All numeric properties are added as fields.
      *
-     * @param bean bean
-     * @param name measurement name
+     * @param interfaceClass interface of bean
+     * @param bean           bean
+     * @param name           measurement name
      * @return new instance of {@link Point}
      */
-    private Point buildPointFromBean(final Object bean, String name) {
+    Point buildPointFromBean(Class interfaceClass, final Object bean, String name) {
         Point point = Point.measurement(name);
 
-        Method[] declaredMethods = bean.getClass().getDeclaredMethods();
+        Method[] declaredMethods = interfaceClass.getDeclaredMethods();
         for (Method method : declaredMethods) {
-            method.setAccessible(true);
             String methodName = method.getName();
             if (methodName.startsWith("get") && method.getParameterCount() == 0
                 && (method.getReturnType().isInstance(Number.class) || method.getReturnType().isPrimitive())) {

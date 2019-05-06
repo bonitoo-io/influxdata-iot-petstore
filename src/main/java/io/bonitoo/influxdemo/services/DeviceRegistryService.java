@@ -72,6 +72,10 @@ public class DeviceRegistryService {
         return Collections.unmodifiableList((list));
     }
 
+    public List<DeviceInfo> getDeviceInfos(final int offset, final int limit) {
+        return list.subList(offset, offset + limit);
+    }
+
     public void authorizeDevice(String deviceId) {
         AuthorizationsApi authorizationsApi = influxDBService.getPlatformClient().getAuthorizationsApi();
 
@@ -118,4 +122,5 @@ public class DeviceRegistryService {
         return id != null && id.matches("[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}");
 
     }
+
 }
