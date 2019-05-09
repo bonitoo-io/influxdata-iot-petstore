@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 
 import org.influxdata.LogLevel;
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.client.WriteApi;
 import org.influxdata.client.domain.WritePrecision;
@@ -21,14 +22,16 @@ import org.influxdata.query.FluxTable;
 import org.influxdata.query.dsl.Flux;
 import org.influxdata.query.dsl.functions.properties.TimeInterval;
 import org.influxdata.query.dsl.functions.restriction.Restrictions;
-
+import org.influxdata.spring.influx.InfluxDB2Properties;
 import io.bonitoo.influxdemo.entities.Sensor;
 import io.bonitoo.influxdemo.services.InfluxDBService;
+
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -37,29 +40,32 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest (classes = InfluxDBService.class)
 @EnableConfigurationProperties
-
+@EnableAutoConfiguration
 public class InfluxDBServiceTest {
     private static Logger log = Logger.getLogger(InfluxDBServiceTest.class.getName());
 
     @Autowired
-    InfluxDBService influxDBService;
+    InfluxDBClient influxDBClient;
+
+    @Autowired
+    InfluxDB2Properties properties;
 
     @Before
     public  void enableLogging () {
-       influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
+       influxDBClient.setLogLevel(LogLevel.BODY);
     }
 
     @Test
     public void testInfluxDBService() {
 
-        QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryApi = influxDBClient.getQueryApi();
 
-        Flux query = Flux.from(influxDBService.getBucket())
+        Flux query = Flux.from(properties.getBucket())
             .range(-10l, ChronoUnit.MINUTES)
             .filter(Restrictions.measurement().equal("sensor"));
 
 
-        List<FluxTable> query1 = queryApi.query(query.toString(), influxDBService.getOrgId());
+        List<FluxTable> query1 = queryApi.query(query.toString());
 
         Assertions.assertThat(query1).isNotNull();
     }
@@ -67,8 +73,8 @@ public class InfluxDBServiceTest {
     @Test
     public void testWritePoint() {
 
-        influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
-        WriteApi writeApi = influxDBService.getPlatformClient().getWriteApi();
+        influxDBClient.setLogLevel(LogLevel.BODY);
+        WriteApi writeApi = influxDBClient.getWriteApi();
 
         Sensor sensor = new Sensor();
         sensor.setTemperature(10);
@@ -81,7 +87,7 @@ public class InfluxDBServiceTest {
 
         ListenerRegistration listenerRegistration = writeApi.listenEvents(WriteSuccessEvent.class, listener);
 
-        writeApi.writeMeasurement(influxDBService.getBucket(), influxDBService.getOrgId(), WritePrecision.MS, sensor);
+        writeApi.writeMeasurement(WritePrecision.MS, sensor);
 
         waitToCallback(listener.getCountDownLatch());
         listener.getValue().logEvent();
@@ -93,15 +99,15 @@ public class InfluxDBServiceTest {
     @Test
     public void testQueryParametrized() {
 
-        influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
-        QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
+        influxDBClient.setLogLevel(LogLevel.BODY);
+        QueryApi queryApi = influxDBClient.getQueryApi();
 
         Map<String, Object> properties = new HashMap<>();
         properties.put("every", new TimeInterval(15L, ChronoUnit.MINUTES));
         properties.put("period", new TimeInterval(20L, ChronoUnit.SECONDS));
 
 
-        Flux flux = Flux.from(influxDBService.getBucket())
+        Flux flux = Flux.from(this.properties.getBucket())
             .range(-5l, ChronoUnit.MINUTES)
             .filter(Restrictions.measurement().equal("sensor"))
             .filter(Restrictions.field().equal("temperature"))
@@ -110,16 +116,16 @@ public class InfluxDBServiceTest {
         //.withPropertyValue("offset", 1l)
 
         System.out.println(flux);
-        List<FluxTable> query = queryApi.query(flux.toString(properties), influxDBService.getOrgId());
+        List<FluxTable> query = queryApi.query(flux.toString(properties));
 
     }
 
     @Test
     public void testQuery() {
 
-        influxDBService.getPlatformClient().setLogLevel(LogLevel.BODY);
-        QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
-        WriteApi writeApi = influxDBService.getPlatformClient().getWriteApi();
+        influxDBClient.setLogLevel(LogLevel.BODY);
+        QueryApi queryApi = influxDBClient.getQueryApi();
+        WriteApi writeApi = influxDBClient.getWriteApi();
 
 
         Sensor sensor = new Sensor();
@@ -131,18 +137,18 @@ public class InfluxDBServiceTest {
 
         WriteEventListener<WriteSuccessEvent> listener = new WriteEventListener<>();
         ListenerRegistration listenerRegistration = writeApi.listenEvents(WriteSuccessEvent.class, listener);
-        writeApi.writeMeasurement(influxDBService.getBucket(), influxDBService.getOrgId(), WritePrecision.MS, sensor);
+        writeApi.writeMeasurement(WritePrecision.MS, sensor);
         waitToCallback(listener.getCountDownLatch());
         listenerRegistration.dispose();
 
-        Flux query = Flux.from(influxDBService.getBucket())
+        Flux query = Flux.from(properties.getBucket())
             .range(-1L, ChronoUnit.HOURS)
             .filter(Restrictions.measurement().equal("sensor"))
             .filter(Restrictions.tag("sid").equal("test-sid"))
             .filter(Restrictions.tag("location").equal("Prague"))
             .last();
 
-        List<FluxTable> query1 = queryApi.query(query.toString(), influxDBService.getOrgId());
+        List<FluxTable> query1 = queryApi.query(query.toString());
 
         Assertions.assertThat(query1).isNotNull();
         Assertions.assertThat(query1.size()).isGreaterThan(0);
@@ -199,7 +205,7 @@ public class InfluxDBServiceTest {
 
 
     public QueryApi getQueryApi() {
-        return influxDBService.getPlatformClient().getQueryApi();
+        return influxDBClient.getQueryApi();
     }
 
 }

@@ -61,8 +61,11 @@ docker exec -it my-influxdb2 influx setup --username my-user --password my-passw
 
 ## show created orgId
 ORGID=`docker exec -it my-influxdb2 influx org find | grep my-org  | awk '{ print $1 }'`
-echo "orgId="${ORGID}
 
-sed -i.backup 's|\s*influxdb.orgId\s*=.*$|influxdb.orgId='${ORGID}'|' ${SCRIPT_PATH}/../src/main/resources/application.properties
+## create micrometer bucket
+docker exec -it my-influxdb2 influx bucket create --name "micrometer-bucket" --org-id ${ORGID} --retention 48h
+
+echo "orgId="${ORGID}   
+sed -i.backup 's|\s*spring.influx2.org\s*=.*$|spring.influx2.org='${ORGID}'|' ${SCRIPT_PATH}/../src/main/resources/application.properties
 
 

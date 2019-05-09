@@ -3,10 +3,12 @@ package io.bonitoo.influxdemo.rest;
 
 import java.util.Optional;
 
+import org.influxdata.spring.influx.InfluxDB2Properties;
 import io.bonitoo.influxdemo.rest.models.OnboardingResponse;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
-import io.bonitoo.influxdemo.services.InfluxDBService;
 import io.bonitoo.influxdemo.services.domain.DeviceInfo;
+
+import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -24,15 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class DeviceOnboardingService {
 
-    private final InfluxDBService influxDBService;
+    private final InfluxDB2Properties properties;
 
     private static Logger log = LoggerFactory.getLogger(DeviceOnboardingService.class);
 
     private final DeviceRegistryService deviceRegistry;
 
     @Autowired
-    public DeviceOnboardingService(final InfluxDBService influxDBService, final DeviceRegistryService deviceRegistryService) {
-        this.influxDBService = influxDBService;
+    public DeviceOnboardingService(final InfluxDB2Properties properties, final DeviceRegistryService deviceRegistryService) {
+        this.properties = properties;
         this.deviceRegistry = deviceRegistryService;
     }
 
@@ -51,6 +53,7 @@ public class DeviceOnboardingService {
             @ApiResponse(code = 500, message = "Internal server error")
         }
     )
+    @Timed(value = "registerDevice", percentiles = {0.5, 0.95, 0.999}, histogram = true)
     public ResponseEntity registerDevice(@PathVariable String id) {
 
         log.info("register device request for {}", id);
@@ -83,9 +86,9 @@ public class DeviceOnboardingService {
         OnboardingResponse resp = new OnboardingResponse();
 
         resp.setAuthToken(info.authToken);
-        resp.setOrgId(influxDBService.getOrgId());
-        resp.setBucket(influxDBService.getBucket());
-        resp.setUrl(influxDBService.getUrl());
+        resp.setOrgId(properties.getOrg());
+        resp.setBucket(properties.getBucket());
+        resp.setUrl(properties.getUrl());
 
         resp.setDeviceId(id);
 

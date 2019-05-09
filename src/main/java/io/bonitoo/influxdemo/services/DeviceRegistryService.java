@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.influxdata.client.AuthorizationsApi;
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.domain.Authorization;
 import org.influxdata.client.domain.AuthorizationUpdateRequest;
 import org.influxdata.client.domain.Permission;
 import org.influxdata.client.domain.PermissionResource;
-
+import org.influxdata.spring.influx.InfluxDB2Properties;
 import io.bonitoo.influxdemo.services.domain.DeviceInfo;
+
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,13 +22,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class DeviceRegistryService {
 
-    private final InfluxDBService influxDBService;
+    private final InfluxDBClient influxDBClient;
+    private final InfluxDB2Properties properties;
 
     //map holding device number and authorizations id
     private List<DeviceInfo> list = new ArrayList<>();
 
-    public DeviceRegistryService(final InfluxDBService influxDBService) {
-        this.influxDBService = influxDBService;
+    public DeviceRegistryService(final InfluxDBClient influxDBClient, InfluxDB2Properties properties) {
+        this.influxDBClient = influxDBClient;
+        this.properties = properties;
     }
 
     public Optional<DeviceInfo> getDeviceInfo(String deviceId) {
@@ -60,7 +64,7 @@ public class DeviceRegistryService {
 
         deviceInfo.ifPresent(d -> {
             if (d.authId != null) {
-                AuthorizationsApi authorizationsApi = influxDBService.getPlatformClient().getAuthorizationsApi();
+                AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
                 authorizationsApi.deleteAuthorization(d.authId);
             }
             list.remove(d);
@@ -77,10 +81,10 @@ public class DeviceRegistryService {
     }
 
     public void authorizeDevice(String deviceId) {
-        AuthorizationsApi authorizationsApi = influxDBService.getPlatformClient().getAuthorizationsApi();
+        AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
 
         Authorization a = new Authorization();
-        a.setOrgID(influxDBService.getOrgId());
+        a.setOrgID(properties.getOrg());
         a.setStatus(AuthorizationUpdateRequest.StatusEnum.ACTIVE);
         a.setDescription(deviceId);
 
@@ -103,7 +107,7 @@ public class DeviceRegistryService {
     private List<Permission> createWritePermissions() {
 
         PermissionResource resource = new PermissionResource();
-        resource.setOrgID(influxDBService.getOrgId());
+        resource.setOrgID(properties.getOrg());
         resource.setType(PermissionResource.TypeEnum.BUCKETS);
 
         Permission permission = new Permission();

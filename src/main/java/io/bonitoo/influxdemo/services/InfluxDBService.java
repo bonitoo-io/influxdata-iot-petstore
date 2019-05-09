@@ -5,65 +5,24 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.PostConstruct;
 
 import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.InfluxDBClientFactory;
 import org.influxdata.query.FluxTable;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConfigurationProperties ("influxdb")
+@ConfigurationProperties ("spring.influx2")
 public class InfluxDBService {
 
-    private InfluxDBClient platformClient;
+    private InfluxDBClient influxDBClient;
 
-    private String token;
-    private String orgId;
-    private String bucket;
-    private String url;
+    @Autowired
+    public InfluxDBService(final InfluxDBClient influxDBClient) {
 
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(final String token) {
-        this.token = token;
-    }
-
-    public void setOrgId(final String orgId) {
-        this.orgId = orgId;
-    }
-
-    public void setBucket(final String bucket) {
-        this.bucket = bucket;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(final String url) {
-        this.url = url;
-    }
-
-    @PostConstruct
-    void init() {
-        platformClient = InfluxDBClientFactory.create(url, token.toCharArray());
-    }
-
-    public InfluxDBClient getPlatformClient() {
-        return platformClient;
-    }
-
-    public String getOrgId() {
-        return orgId;
-    }
-
-    public String getBucket() {
-        return bucket;
+        this.influxDBClient = influxDBClient;
     }
 
     /**
@@ -166,7 +125,7 @@ public class InfluxDBService {
     }
 
     private String[] queryStringValues(final String q) {
-        List<FluxTable> result = getPlatformClient().getQueryApi().query(q, orgId);
+        List<FluxTable> result = influxDBClient.getQueryApi().query(q);
 
         if (result.isEmpty()) {
             return new String[0];

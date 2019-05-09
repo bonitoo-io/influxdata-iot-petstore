@@ -1,5 +1,10 @@
 package io.bonitoo.influxdemo.ui;
 
+import org.influxdata.client.InfluxDBClient;
+import org.influxdata.spring.influx.InfluxDB2Properties;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.ui.components.FluxResultGrid;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -13,9 +18,6 @@ import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.InfluxDBService;
-import io.bonitoo.influxdemo.ui.components.FluxResultGrid;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +43,8 @@ public class FluxResultView extends HorizontalLayout {
         return appendLimit(query, dataProviderQuery.getLimit(), dataProviderQuery.getOffset());
     }
 
-    private InfluxDBService influxDBService;
+    private InfluxDBClient influxDBClient;
+    private InfluxDB2Properties properties;
 
     private TextArea fluxTextArea;
     private TextField statusLabel;
@@ -52,10 +55,11 @@ public class FluxResultView extends HorizontalLayout {
     private String query;
 
 
-    public FluxResultView(@Autowired InfluxDBService influxDBService) {
+    public FluxResultView(@Autowired InfluxDBClient influxDBClient, @Autowired InfluxDB2Properties properties) {
 
-        this.influxDBService = influxDBService;
-        query = "from(bucket: \"" + influxDBService.getBucket() + "\")\n" +
+        this.influxDBClient = influxDBClient;
+        this.properties = properties;
+        query = "from(bucket: \"" + properties.getBucket() + "\")\n" +
             "  |> range(start: -15m)\n" +
             "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
             "  |> filter(fn: (r) => r._field == \"temperature\")\n";
@@ -99,7 +103,7 @@ public class FluxResultView extends HorizontalLayout {
         hl.setWidthFull();
         verticalLayout.add(hl);
 
-        grid = new FluxResultGrid(influxDBService).query(query);
+        grid = new FluxResultGrid(influxDBClient).query(query);
         verticalLayout.add();
 
         executeFlux(query, verticalLayout);
@@ -126,7 +130,7 @@ public class FluxResultView extends HorizontalLayout {
                 verticalLayout.remove(grid);
             }
 
-            grid = new FluxResultGrid(influxDBService).query(query);
+            grid = new FluxResultGrid(influxDBClient).query(query);
             verticalLayout.add(grid);
             BrowseDataView.notifyComplete(stopWatch, current, statusLabel, progressBar);
         });

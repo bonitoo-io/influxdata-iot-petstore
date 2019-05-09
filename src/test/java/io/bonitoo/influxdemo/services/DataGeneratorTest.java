@@ -6,19 +6,19 @@ import java.lang.management.ThreadMXBean;
 
 import org.influxdata.client.write.Point;
 
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Assert;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {CompositeMeterRegistry.class, InfluxDBService.class, DataGenerator.class})
+@SpringBootTest(classes = {InfluxDBService.class, DataGenerator.class})
 @EnableConfigurationProperties
-
+@EnableAutoConfiguration
 public class DataGeneratorTest {
 
     @Autowired

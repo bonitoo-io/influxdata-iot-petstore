@@ -5,10 +5,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxColumn;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
+import org.influxdata.spring.influx.InfluxDB2Properties;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.services.DataGenerator;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
@@ -35,9 +39,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.shared.Registration;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.DataGenerator;
-import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,14 +66,16 @@ public class DashboardView extends VerticalLayout {
     private FluxChartSettings chartTemperatureSettings;
 
     final
-    InfluxDBService influxDBService;
+    InfluxDBClient influxDBClient;
 
     final
     DataGenerator dataGenerator;
 
     @Autowired
-    public DashboardView(final InfluxDBService influxDBService, final DataGenerator dataGenerator) {
-        this.influxDBService = influxDBService;
+    public DashboardView(final InfluxDBClient influxDBClient,
+                         final InfluxDB2Properties properties,
+                         final DataGenerator dataGenerator) {
+        this.influxDBClient = influxDBClient;
         this.dataGenerator = dataGenerator;
 
         setClassName("dashboard");
@@ -112,7 +115,7 @@ public class DashboardView extends VerticalLayout {
         add(writeButton);
         add(rangeCombo);
 
-        String bucketName = influxDBService.getBucket();
+        String bucketName = properties.getBucket();
         chartTemperatureSettings = new FluxChartSettings("Temperature", bucketName, "sensor",
             new String[]{"temperature"},
             new TagStructure[]{new TagStructure("location", "Prague", "San Francisco"),
@@ -190,7 +193,7 @@ public class DashboardView extends VerticalLayout {
 
     private Chart createChart(FluxChartSettings fs) {
 
-        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBClient.getQueryApi();
 
         final Chart chart = new Chart();
 
@@ -238,10 +241,10 @@ public class DashboardView extends VerticalLayout {
 
     private List<FluxTable> queryInfluxDB(String query) {
 
-        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBClient.getQueryApi();
 
         try {
-            return queryClient.query(query, influxDBService.getOrgId());
+            return queryClient.query(query);
         } catch (Exception e) {
 
             Notification notification = new Notification(

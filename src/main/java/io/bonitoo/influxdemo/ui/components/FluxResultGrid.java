@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
+import io.bonitoo.influxdemo.ui.DashboardView;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.charts.Chart;
@@ -24,8 +26,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
-import io.bonitoo.influxdemo.services.InfluxDBService;
-import io.bonitoo.influxdemo.ui.DashboardView;
 
 //@com.vaadin.flow.component.Tag (value = "flux-result-grid")
 
@@ -38,14 +38,14 @@ public class FluxResultGrid extends Composite<Div> {
     private int selectedTab = 0;
     private VerticalLayout layout;
 
-    private InfluxDBService influxDBService;
+    private InfluxDBClient influxDBClient;
 
-    public FluxResultGrid(InfluxDBService influxDBService) {
+    public FluxResultGrid(InfluxDBClient influxDBClient) {
 
 
         layout = new VerticalLayout();
 
-        this.influxDBService = influxDBService;
+        this.influxDBClient = influxDBClient;
 
         displaySwitchCheckbox = new Checkbox();
 
@@ -58,9 +58,9 @@ public class FluxResultGrid extends Composite<Div> {
 
     public FluxResultGrid query(String fluxQuery) {
 
-        QueryApi queryApi = influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryApi = influxDBClient.getQueryApi();
 
-        List<FluxTable> fluxResult = queryApi.query(fluxQuery, influxDBService.getOrgId());
+        List<FluxTable> fluxResult = queryApi.query(fluxQuery);
 
         Tabs tabs = new Tabs();
         layout.add(tabs);

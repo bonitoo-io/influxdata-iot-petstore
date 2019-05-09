@@ -3,8 +3,11 @@ package io.bonitoo.influxdemo.ui;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
+import org.influxdata.spring.influx.InfluxDB2Properties;
+import io.bonitoo.influxdemo.MainLayout;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -18,8 +21,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class ExecuteFluxView extends HorizontalLayout {
 
     private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 
-    private InfluxDBService influxDBService;
+    private final InfluxDBClient influxDBClient;
 
     private TextArea fluxTextArea;
     private TextField statusLabel;
@@ -44,10 +45,10 @@ public class ExecuteFluxView extends HorizontalLayout {
     private String query;
 
     @Autowired
-    public ExecuteFluxView(InfluxDBService influxDBService ) {
-        this.influxDBService = influxDBService;
+    public ExecuteFluxView(InfluxDBClient influxDBClient, InfluxDB2Properties properties) {
+        this.influxDBClient = influxDBClient;
 
-        query = "from(bucket: \"" + influxDBService.getBucket() + "\")\n" +
+        query = "from(bucket: \"" + properties.getBucket() + "\")\n" +
             "  |> range(start: -1d)\n" +
             "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
             "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
@@ -101,8 +102,7 @@ public class ExecuteFluxView extends HorizontalLayout {
 
         List<FluxRecord> records = new ArrayList<>();
 
-        QueryApi queryClient =
-            influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBClient.getQueryApi();
 
         progressBar.setIndeterminate(true);
         progressBar.setVisible(true);
@@ -112,15 +112,11 @@ public class ExecuteFluxView extends HorizontalLayout {
 
         UI current = UI.getCurrent();
 
-        queryClient.query(query, influxDBService.getOrgId(),
+        queryClient.query(query,
 
-            (cancellable, record) -> {
-                records.add(record);
-            },
+            (cancellable, record) -> records.add(record),
 
-            (error) -> {
-                BrowseDataView.handleError(current, error, statusLabel, progressBar);
-            },
+            (error) -> BrowseDataView.handleError(current, error, statusLabel, progressBar),
 
             () -> {
                 //on complete

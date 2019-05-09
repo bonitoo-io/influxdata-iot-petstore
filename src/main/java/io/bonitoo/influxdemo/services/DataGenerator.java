@@ -9,14 +9,15 @@ import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.Arrays;
 
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.WriteApi;
 import org.influxdata.client.domain.WritePrecision;
 import org.influxdata.client.write.Point;
 import org.influxdata.client.write.events.WriteErrorEvent;
 import org.influxdata.client.write.events.WriteRetriableErrorEvent;
 import org.influxdata.client.write.events.WriteSuccessEvent;
-
 import io.bonitoo.influxdemo.entities.Sensor;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.commons.lang3.time.StopWatch;
@@ -35,14 +36,14 @@ import org.springframework.stereotype.Service;
 public class DataGenerator {
 
     private static Logger log = LoggerFactory.getLogger(DataGenerator.class);
-    private InfluxDBService influxDBService;
+    private InfluxDBClient influxDBClient;
     private boolean running;
     Counter counter;
 
     @Autowired
-    public DataGenerator(final InfluxDBService influxDBService, MeterRegistry meterRegistry) {
+    public DataGenerator(final InfluxDBClient influxDBClient, MeterRegistry meterRegistry) {
 
-        this.influxDBService = influxDBService;
+        this.influxDBClient = influxDBClient;
         counter = meterRegistry.counter("write.count");
         running = true;
     }
@@ -68,7 +69,7 @@ public class DataGenerator {
             return;
         }
 
-        try (WriteApi writeClient = influxDBService.getPlatformClient().getWriteApi()) {
+        try (WriteApi writeClient = influxDBClient.getWriteApi()) {
 
             counter.increment();
 
@@ -83,9 +84,6 @@ public class DataGenerator {
                 log.debug("WriteSuccessEvent success {}", e.getLineProtocol());
             });
 
-            String orgId = influxDBService.getOrgId();
-            String bucket = influxDBService.getBucket();
-
             log.debug("Write random data");
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
@@ -95,7 +93,7 @@ public class DataGenerator {
 
                     Sensor randomData = SensorRandomGenerator.getRandomData(now, sid, loc);
                     //write data using sensor POJO class
-                    writeClient.writeMeasurement(bucket, orgId, WritePrecision.MS, randomData);
+                    writeClient.writeMeasurement(WritePrecision.MS, randomData);
                     log.debug("Writing: " + randomData);
                 });
             });
@@ -110,17 +108,17 @@ public class DataGenerator {
             log.info("Write JMX data");
             Point operatingSystemMXBeanPoint = buildPointFromBean(com.sun.management.OperatingSystemMXBean.class, ManagementFactory.getOperatingSystemMXBean(), "operatingSystemMXBean");
             operatingSystemMXBeanPoint.addTag("host", hostName);
-            writeClient.writePoint(bucket, orgId, operatingSystemMXBeanPoint);
+            writeClient.writePoint(operatingSystemMXBeanPoint);
 
             Point runtimeMXBeanPoint = buildPointFromBean(RuntimeMXBean.class, ManagementFactory.getRuntimeMXBean(), "runtimeMXBean");
             runtimeMXBeanPoint.addTag("host", hostName);
-            writeClient.writePoint(bucket, orgId, runtimeMXBeanPoint);
+            writeClient.writePoint(runtimeMXBeanPoint);
 
             MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
             Point p = Point.measurement("memoryMXBean")
                 .addField("HeapMemoryUsage.used", memoryMXBean.getHeapMemoryUsage().getUsed())
                 .addField("HeapMemoryUsage.max", memoryMXBean.getHeapMemoryUsage().getMax());
-            writeClient.writePoint(bucket, orgId, p);
+            writeClient.writePoint(p);
             stopWatch.stop();
             log.info("Write job finished in {}", stopWatch.getTime());
         }

@@ -8,9 +8,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
+import org.influxdata.spring.influx.InfluxDB2Properties;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.services.InfluxDBService;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -37,8 +41,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,13 +85,18 @@ public class BrowseDataView extends HorizontalLayout {
     private Set<String> selectedTags = new TreeSet<>();
     private String query = "";
 
-//    @Autowired
-    private InfluxDBService influxDBService;
+    private final InfluxDBService influxDBService;
+    private final InfluxDBClient influxDBClient;
+    private final InfluxDB2Properties properties;
 
     @Autowired
-    public BrowseDataView(InfluxDBService influxDBService) {
+    public BrowseDataView(InfluxDBService influxDBService,
+                          InfluxDBClient influxDBClient,
+                          InfluxDB2Properties properties) {
 
         this.influxDBService = influxDBService;
+        this.influxDBClient = influxDBClient;
+        this.properties = properties;
 
         setSizeFull();
 
@@ -109,13 +116,13 @@ public class BrowseDataView extends HorizontalLayout {
         splitLayout.setSecondaryStyle("minWidth", "200px");
         splitLayout.setSecondaryStyle("maxWidth", "350px");
 
-        selectedBucket = this.influxDBService.getBucket();
+        selectedBucket = this.properties.getBucket();
 
         bucketBox = new ComboBox<>();
         bucketBox.setWidth("100%");
         bucketBox.setItems(this.influxDBService.getBuckets());
         bucketBox.setLabel("Bucket");
-        bucketBox.setValue(this.influxDBService.getBucket());
+        bucketBox.setValue(this.properties.getBucket());
         bucketBox.addValueChangeListener(e -> {
             selectedBucket = e.getValue();
             measurementsCombo.setItems(this.influxDBService.getMeasurements(selectedBucket));
@@ -239,7 +246,7 @@ public class BrowseDataView extends HorizontalLayout {
 
         List<FluxRecord> records = new ArrayList<>();
 
-        QueryApi queryClient = influxDBService.getPlatformClient().getQueryApi();
+        QueryApi queryClient = influxDBClient.getQueryApi();
 
         progressBar.setIndeterminate(true);
         progressBar.setVisible(true);
@@ -250,7 +257,7 @@ public class BrowseDataView extends HorizontalLayout {
         UI current = UI.getCurrent();
 
         if (displayType == DisplayType.GRID) {
-            queryClient.query(query, influxDBService.getOrgId(),
+            queryClient.query(query,
 
                 (cancellable, record) -> {
                     records.add(record);
@@ -268,7 +275,7 @@ public class BrowseDataView extends HorizontalLayout {
                 });
         }
         if (displayType == DisplayType.CHART || displayType == DisplayType.CHART_STACKED) {
-            List<FluxTable> result = queryClient.query(this.query, influxDBService.getOrgId());
+            List<FluxTable> result = queryClient.query(this.query);
             addToChart(contentLayout, result, displayType);
             notifyComplete(stopWatch, current, statusLabel, progressBar);
         }
