@@ -3,6 +3,7 @@ package io.bonitoo.influxdemo.ui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxColumn;
@@ -306,6 +307,21 @@ public class DashboardView extends VerticalLayout {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Construct series name from flux table
+     *
+     * @param fluxTable flux table result
+     * @return series display name
+     */
+    public static String getSeriesNameShort(final FluxTable fluxTable) {
+        return fluxTable.getGroupKey().stream().filter(
+            fluxColumn -> fluxColumn.isGroup()
+                && !"_start".equals(fluxColumn.getLabel())
+                && !"_stop".equals(fluxColumn.getLabel()))
+            .map(fluxColumn -> fluxColumn.getLabel() + "=" + fluxTable.getRecords().get(0).getValueByIndex(fluxColumn.getIndex()))
+            .collect(Collectors.joining(", "));
     }
 
 

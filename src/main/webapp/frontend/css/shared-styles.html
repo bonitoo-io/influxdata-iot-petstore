@@ -43,6 +43,7 @@
             background: var(--lumo-shade-80pct);
             color: #bec2cc;
         }
+
         .login-information h1,h2,h3,h4 {
             color: #bec2cc;
         }
@@ -76,7 +77,7 @@
         .menu-bar {
             flex-direction: column;
             flex-shrink: 0;
-            /*background: var(--lumo-base-color);*/
+            background-color: var(--lumo-shade-10pct);
             box-shadow: var(--overlay-box-shadow);
         }
 
@@ -101,10 +102,6 @@
             display: block;
         }
 
-        .menu-button {
-            display: none;
-        }
-
         .dashboard {
             /*position: absolute;*/
             /*right: 0;*/
@@ -124,7 +121,7 @@
             .main-layout {
                 flex-direction: column;
                 --top-bar-height: 50px;
-                --top-bar-margin: 2vw;
+                --top-bar-margin: 0.0vw;
             }
 
             .menu-bar {
@@ -133,7 +130,7 @@
                 justify-content: space-between;
                 height: var(--top-bar-height);
                 margin: 0 var(--top-bar-margin);
-                background: none;
+                /*background: none;*/
                 box-shadow: none;
             }
 
@@ -152,6 +149,7 @@
             }
 
             .menu-button {
+                background-color: var(--overlay-box-shadow);
                 display: block;
             }
 

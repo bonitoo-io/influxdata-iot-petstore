@@ -76,8 +76,6 @@ public class FluxResultView extends HorizontalLayout {
             executeFlux(query, verticalLayout);
         });
 
-//        verticalLayout.add(fluxButton);
-
         fluxTextArea = new TextArea();
         fluxTextArea.setValue(query);
         fluxTextArea.addThemeVariants(TextAreaVariant.LUMO_SMALL);
@@ -93,13 +91,6 @@ public class FluxResultView extends HorizontalLayout {
         statusLabel.setEnabled(false);
         statusLabel.addThemeVariants(TextFieldVariant.LUMO_SMALL);
 
-//        verticalLayout.add(statusLabel);
-
-//        HorizontalLayout hl = new HorizontalLayout();
-//        hl.setWidth("100%");
-//        verticalLayout.add(hl);
-
-
         progressBar = new ProgressBar();
         verticalLayout.add(progressBar);
         add(verticalLayout);
@@ -108,7 +99,7 @@ public class FluxResultView extends HorizontalLayout {
         hl.setWidthFull();
         verticalLayout.add(hl);
 
-        grid = new FluxResultGrid(influxDBService, query);
+        grid = new FluxResultGrid(influxDBService).query(query);
         verticalLayout.add();
 
         executeFlux(query, verticalLayout);
@@ -135,7 +126,7 @@ public class FluxResultView extends HorizontalLayout {
                 verticalLayout.remove(grid);
             }
 
-            grid = new FluxResultGrid(influxDBService, query);
+            grid = new FluxResultGrid(influxDBService).query(query);
             verticalLayout.add(grid);
             BrowseDataView.notifyComplete(stopWatch, current, statusLabel, progressBar);
         });
