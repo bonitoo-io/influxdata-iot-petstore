@@ -13,8 +13,6 @@ import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
 import org.influxdata.spring.influx.InfluxDB2Properties;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.InfluxDBService;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -41,6 +39,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +57,6 @@ public class BrowseDataView extends HorizontalLayout {
     private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 
     public enum DisplayType {
-        //        raw,
         GRID,
         CHART,
         CHART_STACKED
@@ -333,15 +332,9 @@ public class BrowseDataView extends HorizontalLayout {
 
             configuration.addSeries(dataSeries);
             List<FluxRecord> records = fluxTable.getRecords();
-            for (FluxRecord fluxRecord : records) {
-                if (fluxRecord.getTime() != null) {
-                    Object value = fluxRecord.getValue();
-                    if (value instanceof  Number) {
-                        DataSeriesItem item = new DataSeriesItem(fluxRecord.getTime(), (Number) value);
-                        dataSeries.add(item);
-                    }
-                }
-            }
+            records.stream()
+                .filter(record -> record.getTime() != null && record.getValue() instanceof Number)
+                .forEach(r -> dataSeries.add(new DataSeriesItem(r.getTime(), (Number) r.getValue())));
         }
 
         contentLayout.add(chart);

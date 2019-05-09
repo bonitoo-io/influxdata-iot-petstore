@@ -22,68 +22,61 @@ import org.influxdata.client.write.events.WriteSuccessEvent;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import static java.lang.Thread.sleep;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 
-
+/**
+ * This class demonstrates IoT Device, that registers to IoT Hub and sends data in regular interval.
+ */
 public class Device {
 
     private static Logger log = Logger.getLogger(Device.class.getName());
-    private long interval = 1000L;
-    //iot hub url
-    private String url = "http://localhost:8080/api";
-    private String deviceNumber = "G3D5-34FG-PRE1-S3AP";
+
+    //iot hub hubApiUrl
+    private String hubApiUrl;
+    private String deviceNumber; //like "G3D5-34FG-PRE1-S3AP";
     private OkHttpClient client;
     private OnboardingResponse config;
     private InfluxDBClient influxDBClient;
     private WriteApi writeApi;
     private ScheduledExecutorService executor;
 
-    public Device() {
-        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-        interceptor.setLevel(HttpLoggingInterceptor.Level.NONE);
-        client = new OkHttpClient.Builder()
-            .addInterceptor(interceptor)
+    private long interval;
+    private TimeUnit intervalUnit;
+
+    Device() {
+        this.deviceNumber = SerialNumberHelper.randomSerialNumber();
+        this.hubApiUrl = System.getProperty("hubApiUrl", "http://localhost:8080/api");
+        this.client = new OkHttpClient.Builder()
+            .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE))
             .build();
+        //write intervat in MS
+        this.interval = 1000;
+        this.intervalUnit = TimeUnit.MILLISECONDS;
+
         startScheduler();
     }
 
-
-    public Device(String jsonConfig) {
-        this();
-        setupDevice(jsonConfig);
-        startScheduler();
-    }
-
-    //
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Device device = new Device();
 
-        while (!device.executor.isTerminated()) {
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
-    private static double random(double rangeMin, double rangeMax) {
-        Random r = new Random();
-        return rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+        while (!device.executor.isTerminated()) sleep(1000L);
     }
 
     private void startScheduler() {
         executor = Executors.newScheduledThreadPool(0);
-        executor.scheduleAtFixedRate(this::run, 0, interval, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::loop, 0, interval, intervalUnit);
     }
 
     /**
      * Device registration and authorization
      */
     private void register() {
-        Request request = new Request.Builder().url(url + "/register/" + deviceNumber).build();
+
+        Request request = new Request.Builder().url(hubApiUrl + "/register/" + deviceNumber).build();
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             assert response.body() != null;
@@ -108,25 +101,29 @@ public class Device {
     }
 
     private void setupDevice(final String jsonConfig) {
+
         Gson gson = new GsonBuilder().create();
         // parse json string to object
         this.config = gson.fromJson(jsonConfig, OnboardingResponse.class);
 
         influxDBClient = InfluxDBClientFactory.create(config.url, config.authToken.toCharArray());
         writeApi = influxDBClient.getWriteApi();
-        writeApi.listenEvents(WriteSuccessEvent.class, (value) -> log.info("Write success. " + value.getLineProtocol()));
-        writeApi.listenEvents(WriteErrorEvent.class, (value) -> {
-            log.info("Write error " + value.getThrowable().getLocalizedMessage());
-            config = null;
-
-        });
-        writeApi.listenEvents(WriteRetriableErrorEvent.class, (value) -> log.info("Retryable Write error " + value.getThrowable().getLocalizedMessage()));
+        writeApi.listenEvents(WriteSuccessEvent.class, (
+            event) -> log.info("Write success. " + event.getLineProtocol()));
+        writeApi.listenEvents(WriteErrorEvent.class,
+            (event) -> {
+                log.info("Write error " + event.getThrowable().getLocalizedMessage());
+                config = null;
+            });
+        writeApi.listenEvents(WriteRetriableErrorEvent.class,
+            (event) -> log.info("Retryable Write error " + event.getThrowable().getLocalizedMessage()));
     }
 
-    private void run() {
-
+    private void loop() {
+        //if device is not registered -> register
         if (config == null) {
             register();
+            //write data
         } else {
             writeApi.writePoints(config.bucket, config.orgId, getMetrics());
         }
@@ -150,6 +147,8 @@ public class Device {
         return Collections.singletonList(p);
     }
 
+    //registration api response
+    @SuppressWarnings("unused")
     private class OnboardingResponse {
         private String deviceId;
         private String url;
@@ -157,4 +156,11 @@ public class Device {
         private String authToken;
         private String bucket;
     }
+
+    //helper random generator
+    private static double random(double rangeMin, double rangeMax) {
+        Random r = new Random();
+        return rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+    }
+
 }
