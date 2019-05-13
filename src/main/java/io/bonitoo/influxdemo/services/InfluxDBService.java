@@ -10,11 +10,9 @@ import org.influxdata.client.InfluxDBClient;
 import org.influxdata.query.FluxTable;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConfigurationProperties ("spring.influx2")
 public class InfluxDBService {
 
     private InfluxDBClient influxDBClient;
@@ -146,7 +144,7 @@ public class InfluxDBService {
             + "  |> limit(n: 200)\n"
             + "  |> sort()";
 
-        return queryStringValues(q.toString());
+        return queryStringValues(q);
     }
 
     public String createOrFilter(final String measurement_, final Set<String> selectedItems) {
