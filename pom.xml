@@ -154,10 +154,6 @@
             <optional>true</optional>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>io.micrometer</groupId>-->
-<!--            <artifactId>micrometer-core</artifactId>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>io.micrometer</groupId>

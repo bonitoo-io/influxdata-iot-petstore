@@ -5,6 +5,7 @@ import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import io.bonitoo.influxdemo.authentication.AccessControl;
 import io.bonitoo.influxdemo.authentication.AccessControlFactory;
+import io.bonitoo.influxdemo.authentication.LoginScreen;
 import io.bonitoo.influxdemo.services.DataGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,18 +30,18 @@ public class InitListener implements VaadinServiceInitListener {
             dataGenerator.stopGenerator();
         });
 
-/*
-        initEvent.getSource().addUIInitListener(uiInitEvent -> {
-            uiInitEvent.getUI().addBeforeEnterListener(enterEvent -> {
-                //navigate to login
+        if (!System.getProperty("disableLogin", "false").equals("true")) {
+            initEvent.getSource().addUIInitListener(uiInitEvent -> {
+                uiInitEvent.getUI().addBeforeEnterListener(enterEvent -> {
+                    //navigate to login
 
-                if (!accessControl.isUserSignedIn() && !LoginScreen.class.equals(enterEvent.getNavigationTarget())) {
-                    enterEvent.rerouteTo(LoginScreen.class);
-                }
+                    if (!accessControl.isUserSignedIn() && !LoginScreen.class.equals(enterEvent.getNavigationTarget())) {
+                        enterEvent.rerouteTo(LoginScreen.class);
+                    }
 
+                });
             });
-        });
-        */
+        }
 
     }
 }

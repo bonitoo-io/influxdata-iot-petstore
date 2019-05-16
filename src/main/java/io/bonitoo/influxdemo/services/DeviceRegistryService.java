@@ -1,5 +1,6 @@
 package io.bonitoo.influxdemo.services;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,9 +12,10 @@ import org.influxdata.client.domain.Authorization;
 import org.influxdata.client.domain.AuthorizationUpdateRequest;
 import org.influxdata.client.domain.Permission;
 import org.influxdata.client.domain.PermissionResource;
+import org.influxdata.query.FluxTable;
 import org.influxdata.spring.influx.InfluxDB2Properties;
-import io.bonitoo.influxdemo.services.domain.DeviceInfo;
 
+import io.bonitoo.influxdemo.services.domain.DeviceInfo;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,24 +36,34 @@ public class DeviceRegistryService {
     }
 
     public Optional<DeviceInfo> getDeviceInfo(String deviceId) {
-        return list.stream().filter(d -> d.deviceNumber.equals(deviceId)).findFirst();
+        return list.stream().filter(d -> d.getDeviceNumber().equals(deviceId)).findFirst();
     }
 
     public void registerDevice(String deviceNumber) {
-        updateDeviceInfo(deviceNumber, false, null);
-    }
-
-    private void updateDeviceInfo(String deviceNumber, boolean authorized, String authId) {
-
         Optional<DeviceInfo> deviceInfo = getDeviceInfo(deviceNumber);
 
         DeviceInfo dev = deviceInfo.orElse(new DeviceInfo());
-        dev.deviceNumber = deviceNumber;
-        dev.authorized = authorized;
-        dev.authId = authId;
+        dev.setDeviceNumber(deviceNumber);
+        dev.setAuthorized(false);
+        dev.setAuthId(null);
 
         if (!deviceInfo.isPresent()) {
             list.add(dev);
+        }
+    }
+    public String getDeviceName(String id) {
+        Optional<DeviceInfo> deviceInfo = getDeviceInfo(id);
+        return deviceInfo.map(DeviceInfo::getName).orElseThrow(() -> new IllegalArgumentException("Device with "+id + " does not exist"));
+    }
+
+    public void setDeviceName (String id, String name) {
+
+        Optional<DeviceInfo> deviceInfo = getDeviceInfo(id);
+
+        deviceInfo.ifPresent(d -> d.setName(name));
+
+        if (!deviceInfo.isPresent()) {
+            throw new IllegalArgumentException("Device with "+id + " does not exist");
         }
     }
 
@@ -63,9 +75,9 @@ public class DeviceRegistryService {
         }
 
         deviceInfo.ifPresent(d -> {
-            if (d.authId != null) {
+            if (d.getAuthId() != null) {
                 AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
-                authorizationsApi.deleteAuthorization(d.authId);
+                authorizationsApi.deleteAuthorization(d.getAuthId());
             }
             list.remove(d);
         });
@@ -94,8 +106,8 @@ public class DeviceRegistryService {
 
         Optional<DeviceInfo> infoOptional = getDeviceInfo(deviceId);
         infoOptional.ifPresent(device -> {
-            device.authToken = authorization.getToken();
-            device.authId = authorization.getId();
+            device.setAuthToken(authorization.getToken());
+            device.setAuthId(authorization.getId());
         });
 
         if (!infoOptional.isPresent()) {
@@ -125,6 +137,29 @@ public class DeviceRegistryService {
 
         return id != null && id.matches("[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}");
 
+    }
+
+    public Instant getLastSeen(String deviceId) {
+
+        Optional<DeviceInfo> deviceInfo = getDeviceInfo(deviceId);
+
+        if (deviceInfo.isPresent()) {
+
+
+            String s = "from(bucket: \"my-bucket\")\n" +
+                "  |> range(start: -1w)\n" +
+                "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
+                "  |> filter(fn: (r) => r.sid == \"" + deviceId + "\")\n" +
+                "  |> keep(columns: [\"_time\",\"_value\"])\n" +
+                "  |> last()";
+
+            List<FluxTable> query = influxDBClient.getQueryApi().query(s);
+
+            return query.stream().flatMap(fluxTable -> fluxTable.getRecords().stream()).findFirst().map(r -> r.getTime()).orElse(null);
+
+        }
+
+        return null;
     }
 
 }

@@ -1,13 +1,14 @@
 package io.bonitoo.influxdemo.rest;
 
 
+import java.util.Date;
 import java.util.Optional;
 
 import org.influxdata.spring.influx.InfluxDB2Properties;
+
 import io.bonitoo.influxdemo.rest.models.OnboardingResponse;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
 import io.bonitoo.influxdemo.services.domain.DeviceInfo;
-
 import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -73,26 +74,27 @@ public class DeviceOnboardingService {
         DeviceInfo info = deviceInfo.get();
 
         //pending authorization
-        if (info.authToken == null) {
+        if (info.getAuthToken() == null) {
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
         //device is already authorized
-        if (info.authorized) {
+        if (info.isAuthorized()) {
+            info.setLastSeen(new Date());
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
         //return onboarding request with authtoken
         OnboardingResponse resp = new OnboardingResponse();
 
-        resp.setAuthToken(info.authToken);
+        resp.setAuthToken(info.getAuthToken());
         resp.setOrgId(properties.getOrg());
         resp.setBucket(properties.getBucket());
         resp.setUrl(properties.getUrl());
 
         resp.setDeviceId(id);
 
-        info.authorized = true;
+        info.setAuthorized(true);
 
         return  ResponseEntity.ok(resp);
 

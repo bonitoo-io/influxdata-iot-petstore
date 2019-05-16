@@ -1,12 +1,20 @@
 package io.bonitoo.influxdemo.ui;
 
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
+import java.util.Locale;
 
 import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -16,6 +24,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
@@ -53,16 +62,17 @@ public class MyDevicesView extends VerticalLayout {
         verticalLayout.add(h3);
 
 
-        ComponentRenderer<Span, DeviceInfo> cr = new ComponentRenderer<>(deviceInfo -> {
+        ComponentRenderer<Span, DeviceInfo> deviceNumberColumn = new ComponentRenderer<>(deviceInfo -> {
             Span span = new Span();
-            span.setText(deviceInfo.deviceNumber);
+            span.setText(deviceInfo.getDeviceNumber());
             span.addClassName("monospace");
+            span.addClassName("tiny");
             return span;
         });
 
         ComponentRenderer<Icon, DeviceInfo> authIconColumn = new ComponentRenderer<>(deviceInfo -> {
 
-            if (deviceInfo.authorized) {
+            if (deviceInfo.isAuthorized()) {
                 Icon icon = new Icon(VaadinIcon.CHECK);
                 icon.setColor("00FF00");
                 return icon;
@@ -71,23 +81,46 @@ public class MyDevicesView extends VerticalLayout {
             }
         });
 
+        ComponentRenderer<Component, DeviceInfo> lastSeen = new ComponentRenderer<>(deviceInfo -> {
+
+            Instant lastSeen1 = deviceRegistryService.getLastSeen(deviceInfo.getDeviceNumber());
+
+            DateTimeFormatter formatter =
+                DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM )
+                    .withLocale( Locale.UK )
+                    .withZone( ZoneId.systemDefault() );
+
+
+                Span span = new Span();
+                if (lastSeen1 != null) {
+                    span.setText(formatter.format(lastSeen1));
+                } else {
+                    span.setText(" - ");
+                }
+                span.addClassName("tiny");
+                return span;
+        });
+
         ComponentRenderer<Div, DeviceInfo> authRenderer = new ComponentRenderer<>(deviceInfo -> {
 
             Div div = new Div();
             {
-                Div span = new Div();
-                span.setText(deviceInfo.authId);
+                Span span = new Span();
+                span.setText(deviceInfo.getAuthId());
                 span.addClassName("monospace");
+                span.addClassName("tiny");
                 div.add(span);
 
             }
+            /*
             {
                 Div span = new Div();
-                span.setText(deviceInfo.authToken);
+                span.setText(deviceInfo.getAuthToken());
                 span.addClassName("tiny");
                 span.addClassName("monospace");
                 div.add(span);
             }
+             */
             return div;
         });
 
@@ -114,40 +147,77 @@ public class MyDevicesView extends VerticalLayout {
         deviceGrid.setDataProvider(dataProvider);
 
 
-        deviceGrid.addColumn(cr).setHeader("Device Number").setWidth("20%");
+        deviceGrid.addColumn(deviceNumberColumn).setHeader("Device Number").setWidth("15%");
+        deviceGrid.addColumn(DeviceInfo::getName).setHeader("Device Name").setWidth("25%");
         deviceGrid.addColumn(authIconColumn).setHeader("Authorized").setWidth("10%");
-        deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("50%");
+        deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("10%");
+        deviceGrid.addColumn(lastSeen).setHeader("Last seen").setWidth("20%");
         deviceGrid.addColumn(new ComponentRenderer<>(d -> {
             HorizontalLayout buttons = new HorizontalLayout();
-            if (!d.authorized) {
+            if (!d.isAuthorized()) {
                 // button for saving the name to backend
                 Button authorize = new Button("Authorize", event -> {
 
-                    deviceRegistryService.authorizeDevice(d.deviceNumber);
-                    Notification.show("Device "+d.deviceNumber + " was authorized. ");
-                    deviceGrid.getDataProvider().refreshItem(d);
+                    FormLayout formLayout = new FormLayout();
+
+                    Dialog dialog = new Dialog();
+                    dialog.add(formLayout);
+                    dialog.setCloseOnOutsideClick(true);
+                    dialog.setCloseOnEsc(true);
+
+
+                    TextField deviceNameField = new TextField("Enter device name: ");
+                    deviceNameField.setRequired(true);
+                    formLayout.addFormItem(deviceNameField, "");
+
+                    HorizontalLayout actions = new HorizontalLayout();
+                    dialog.add(actions);
+                    Button cancel = new Button("Cancel", event1 -> {
+                        dialog.close();
+                    });
+                    actions.add(cancel);
+                    cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+
+                    Button confirm = new Button("Authorize Device", event1 -> {
+                        if (deviceNameField.isEmpty()) {
+                            deviceNameField.setInvalid(true);
+                            deviceNameField.setErrorMessage("Device name is required!");
+                            return;
+                        }
+                        deviceRegistryService.authorizeDevice(d.getDeviceNumber());
+                        Notification.show("Device " + d.getDeviceNumber() + " was authorized. ");
+                        d.setName(deviceNameField.getValue());
+                        deviceGrid.getDataProvider().refreshItem(d);
+                        dialog.close();
+                    });
+                    confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+                    actions.add(confirm);
+
+                    dialog.open();
                 });
                 authorize.addThemeVariants(ButtonVariant.LUMO_SMALL);
                 buttons.add(authorize);
             }
 
-            if (d.authorized) {
+//            if (d.isAuthorized()) {
                 // button for saving the name to backend
                 Button remove = new Button("Remove", event -> {
-                    d.authorized = true;
-                    deviceRegistryService.removeDeviceInfo(d.deviceNumber);
+                    d.setAuthorized(true);
+                    deviceRegistryService.removeDeviceInfo(d.getDeviceNumber());
                     deviceGrid.getDataProvider().refreshItem(d);
 
-                    Notification.show("Device "+d.deviceNumber + " was removed. ");
+                    Notification.show("Device " + d.getDeviceNumber() + " was removed. ");
                 });
                 remove.addThemeVariants(ButtonVariant.LUMO_SMALL);
                 remove.addThemeVariants(ButtonVariant.LUMO_ERROR);
                 buttons.add(remove);
-            }
+//            }
             // layouts for placing the text field on top of the buttons
             return new VerticalLayout(buttons);
 
-        })).setHeader("Actions");
+        })).setHeader("Actions").setWidth("20%");
 
 
         verticalLayout.add(deviceGrid);
