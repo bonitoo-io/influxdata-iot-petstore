@@ -20,7 +20,6 @@ import org.influxdata.client.write.events.WriteSuccessEvent;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import static java.lang.Thread.sleep;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -46,6 +45,7 @@ public class Device {
 
     private long interval;
     private TimeUnit intervalUnit;
+    private boolean running = true;
 
     Device() {
         this.deviceNumber = randomSerialNumber();
@@ -61,14 +61,15 @@ public class Device {
 
     public static void main(String[] args) throws InterruptedException {
         Device device = new Device();
-
-        while (!device.executor.isTerminated()) sleep(1000L);
+        do {
+            Thread.sleep(10000);
+        } while (!device.running);
     }
 
     private void startScheduler() {
-        executor = Executors.newScheduledThreadPool(0);
+        //run executor as daemon thread
+        executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(this::loop, 0, interval, intervalUnit);
-
         if (hubApiUrl == null) {
             try {
                 DeviceDiscovery deviceDiscovery = new DeviceDiscovery(this);
@@ -77,7 +78,6 @@ public class Device {
                 log.info("device discovery error: " + e.toString());
             }
         }
-
     }
 
     /**
@@ -148,6 +148,7 @@ public class Device {
             executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
         }
+        running = false;
     }
 
     private List<Point> getMetrics() {
