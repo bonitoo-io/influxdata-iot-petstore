@@ -8,8 +8,6 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.InfluxDBClientFactory;
@@ -27,13 +25,15 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class demonstrates IoT Device, that registers to IoT Hub and sends data in regular interval.
  */
 public class Device {
 
-    private static Logger log = Logger.getLogger(Device.class.getName());
+    private static Logger log = LoggerFactory.getLogger(Device.class);
 
     //iot hub hubApiUrl
     private String hubApiUrl;
@@ -49,14 +49,13 @@ public class Device {
 
     Device() {
         this.deviceNumber = randomSerialNumber();
-        this.hubApiUrl = System.getProperty("hubApiUrl", "http://localhost:8080/api");
+        this.hubApiUrl = System.getProperty("hubApiUrl");
         this.client = new OkHttpClient.Builder()
             .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE))
             .build();
         //write intervat in MS
         this.interval = 1000;
         this.intervalUnit = TimeUnit.MILLISECONDS;
-
         startScheduler();
     }
 
@@ -69,6 +68,16 @@ public class Device {
     private void startScheduler() {
         executor = Executors.newScheduledThreadPool(0);
         executor.scheduleAtFixedRate(this::loop, 0, interval, intervalUnit);
+
+        if (hubApiUrl == null) {
+            try {
+                DeviceDiscovery deviceDiscovery = new DeviceDiscovery(this);
+                deviceDiscovery.start();
+            } catch (IOException e) {
+                log.info("device discovery error: " + e.toString());
+            }
+        }
+
     }
 
     /**
@@ -76,27 +85,31 @@ public class Device {
      */
     private void register() {
 
+        if (hubApiUrl == null) {
+            log.info("Searching for hub...");
+            return;
+        }
         Request request = new Request.Builder().url(hubApiUrl + "/register/" + deviceNumber).build();
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             assert response.body() != null;
             String jsonBody = response.body().string();
-            log.log(Level.FINE, "Registration response status: " + code + " : " + jsonBody);
+            log.debug("Registration response status: " + code + " : " + jsonBody);
             switch (code) {
                 case 200: {
                     setupDevice(jsonBody);
                     return;
                 }
                 case 201: {
-                    log.info("Waiting for device authorization.. " + response.message());
+                    log.info("Waiting for device authorization... " + response.message());
                     return;
                 }
                 default: {
                     log.info("Device registration error " + code + ". " + response.message());
                 }
             }
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Register device failed: " + e.getLocalizedMessage());
+        } catch (Exception e) {
+            log.error("Register device failed: " + e.getLocalizedMessage());
         }
     }
 
@@ -129,7 +142,7 @@ public class Device {
         }
     }
 
-    public void shutdown() {
+    void shutdown() {
         executor.shutdown();
         try {
             executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
@@ -145,6 +158,14 @@ public class Device {
         p.addField("humidity", random(0, 100));
 
         return Collections.singletonList(p);
+    }
+
+    void setHubApiUrl(final String url) {
+        this.hubApiUrl = url;
+    }
+
+    boolean isRegistered() {
+        return config != null;
     }
 
     //registration api response
