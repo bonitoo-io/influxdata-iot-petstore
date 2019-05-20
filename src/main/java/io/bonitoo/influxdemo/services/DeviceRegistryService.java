@@ -39,10 +39,11 @@ public class DeviceRegistryService {
         return list.stream().filter(d -> d.getDeviceNumber().equals(deviceId)).findFirst();
     }
 
-    public void registerDevice(String deviceNumber) {
+    public void registerDevice(String deviceNumber, String remoteAddress) {
         Optional<DeviceInfo> deviceInfo = getDeviceInfo(deviceNumber);
 
         DeviceInfo dev = deviceInfo.orElse(new DeviceInfo());
+        dev.setRemoteAddress(remoteAddress);
         dev.setDeviceNumber(deviceNumber);
         dev.setAuthorized(false);
         dev.setAuthId(null);

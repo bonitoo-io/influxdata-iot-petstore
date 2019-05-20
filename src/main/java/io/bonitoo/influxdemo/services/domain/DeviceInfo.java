@@ -12,6 +12,7 @@ public class DeviceInfo {
     private String authToken;
 
     private Date lastSeen;
+    private String remoteAddress;
 
     public String getDeviceNumber() {
         return deviceNumber;
@@ -72,5 +73,13 @@ public class DeviceInfo {
     @Override
     public boolean equals(final Object obj) {
         return super.equals(obj);
+    }
+
+    public void setRemoteAddress(final String remoteAddress) {
+        this.remoteAddress = remoteAddress;
+    }
+
+    public String getRemoteAddress() {
+        return remoteAddress;
     }
 }

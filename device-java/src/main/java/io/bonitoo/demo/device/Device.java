@@ -151,7 +151,7 @@ public class Device {
         running = false;
     }
 
-    private List<Point> getMetrics() {
+    List<Point> getMetrics() {
         Point p = Point.measurement("sensor");
         p.time(Instant.now(), WritePrecision.S);
         p.addTag("sid", deviceNumber);
@@ -207,4 +207,13 @@ public class Device {
         return String.format("%s-%s-%s-%s", randomAlphaNumeric(4), randomAlphaNumeric(4), randomAlphaNumeric(4), randomAlphaNumeric(4));
 
     }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public String getDeviceNumber() {
+        return this.deviceNumber;
+    }
+
 }

@@ -3,6 +3,7 @@ package io.bonitoo.influxdemo.rest;
 
 import java.util.Date;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 
 import org.influxdata.spring.influx.InfluxDB2Properties;
 
@@ -55,7 +56,7 @@ public class DeviceOnboardingService {
         }
     )
     @Timed(value = "registerDevice", percentiles = {0.5, 0.95, 0.999}, histogram = true)
-    public ResponseEntity registerDevice(@PathVariable String id) {
+    public ResponseEntity registerDevice(@PathVariable String id, HttpServletRequest request) {
 
         log.info("register device request for {}", id);
 
@@ -67,7 +68,7 @@ public class DeviceOnboardingService {
 
         //first registration
         if (!deviceInfo.isPresent()) {
-            deviceRegistry.registerDevice(id);
+            deviceRegistry.registerDevice(id, request.getRemoteAddr());
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
@@ -96,7 +97,7 @@ public class DeviceOnboardingService {
 
         info.setAuthorized(true);
 
-        return  ResponseEntity.ok(resp);
+        return ResponseEntity.ok(resp);
 
     }
 

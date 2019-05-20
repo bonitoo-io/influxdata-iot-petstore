@@ -148,9 +148,10 @@ public class MyDevicesView extends VerticalLayout {
 
 
         deviceGrid.addColumn(deviceNumberColumn).setHeader("Device Number").setWidth("15%");
-        deviceGrid.addColumn(DeviceInfo::getName).setHeader("Device Name").setWidth("25%");
+        deviceGrid.addColumn(DeviceInfo::getName).setHeader("Device Name").setWidth("15%");
+        deviceGrid.addColumn(DeviceInfo::getRemoteAddress).setHeader("IP").setWidth("15%");
         deviceGrid.addColumn(authIconColumn).setHeader("Authorized").setWidth("10%");
-        deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("10%");
+//        deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("10%");
         deviceGrid.addColumn(lastSeen).setHeader("Last seen").setWidth("20%");
         deviceGrid.addColumn(new ComponentRenderer<>(d -> {
             HorizontalLayout buttons = new HorizontalLayout();
