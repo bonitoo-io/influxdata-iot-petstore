@@ -47,7 +47,7 @@ public class Device {
     private TimeUnit intervalUnit;
     private boolean running = true;
 
-    Device() {
+    public Device() {
         this.deviceNumber = randomSerialNumber();
         this.hubApiUrl = System.getProperty("hubApiUrl");
         this.client = new OkHttpClient.Builder()
@@ -151,7 +151,7 @@ public class Device {
         running = false;
     }
 
-    List<Point> getMetrics() {
+    public List<Point> getMetrics() {
         Point p = Point.measurement("sensor");
         p.time(Instant.now(), WritePrecision.S);
         p.addTag("sid", deviceNumber);

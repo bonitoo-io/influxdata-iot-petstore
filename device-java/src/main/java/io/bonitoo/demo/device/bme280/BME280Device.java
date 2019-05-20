@@ -1,4 +1,4 @@
-package io.bonitoo.demo.device;
+package io.bonitoo.demo.device.bme280;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -9,17 +9,17 @@ import org.influxdata.client.domain.WritePrecision;
 import org.influxdata.client.write.Point;
 
 import com.pi4j.io.i2c.I2CFactory;
-import i2c.sensor.BME280;
+import io.bonitoo.demo.device.Device;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BME280Device extends Device {
 
-    Logger log = LoggerFactory.getLogger(BME280Device.class);
+    private static Logger log = LoggerFactory.getLogger(BME280Device.class);
 
     private BME280 bme280;
 
-    BME280Device() {
+    private BME280Device() {
         super();
 
         try {
@@ -41,7 +41,7 @@ public class BME280Device extends Device {
 
 
     @Override
-    List<Point> getMetrics() {
+    public List<Point> getMetrics() {
 
         if (bme280 == null) {
             return new ArrayList<>();
