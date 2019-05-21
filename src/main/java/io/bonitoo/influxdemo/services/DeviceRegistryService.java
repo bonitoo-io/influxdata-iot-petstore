@@ -135,8 +135,8 @@ public class DeviceRegistryService {
      * Validate device number
      */
     public boolean isValidDeviceNumber(final String id) {
-
-        return id != null && id.matches("[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}");
+        return id != null;
+//        return id != null && id.matches("[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}");
 
     }
 

@@ -9,6 +9,7 @@ import org.influxdata.client.domain.WritePrecision;
 import org.influxdata.client.write.Point;
 
 import com.pi4j.io.i2c.I2CFactory;
+import com.pi4j.system.SystemInfo;
 import io.bonitoo.demo.device.Device;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,4 +65,13 @@ public class BME280Device extends Device {
         return Collections.singletonList(p);
     }
 
+    @Override
+    public String getDeviceNumber() {
+        try {
+            return SystemInfo.getSerial();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
 }

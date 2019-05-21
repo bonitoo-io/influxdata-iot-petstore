@@ -89,7 +89,7 @@ public class Device {
             log.info("Searching for hub...");
             return;
         }
-        Request request = new Request.Builder().url(hubApiUrl + "/register/" + deviceNumber).build();
+        Request request = new Request.Builder().url(hubApiUrl + "/register/" + getDeviceNumber()).build();
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             assert response.body() != null;
@@ -154,7 +154,7 @@ public class Device {
     public List<Point> getMetrics() {
         Point p = Point.measurement("sensor");
         p.time(Instant.now(), WritePrecision.S);
-        p.addTag("sid", deviceNumber);
+        p.addTag("sid", getDeviceNumber());
         p.addField("temperature", random(10, 40));
         p.addField("humidity", random(0, 100));
 
@@ -203,9 +203,7 @@ public class Device {
      * return random string in "%s-%s-%s-%s" format
      **/
     private String randomSerialNumber() {
-
         return String.format("%s-%s-%s-%s", randomAlphaNumeric(4), randomAlphaNumeric(4), randomAlphaNumeric(4), randomAlphaNumeric(4));
-
     }
 
     public boolean isRunning() {
