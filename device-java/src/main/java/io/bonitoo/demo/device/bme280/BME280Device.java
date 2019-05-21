@@ -16,12 +16,10 @@ import org.slf4j.LoggerFactory;
 public class BME280Device extends Device {
 
     private static Logger log = LoggerFactory.getLogger(BME280Device.class);
-
     private BME280 bme280;
 
     private BME280Device() {
         super();
-
         try {
             bme280 = new BME280();
         } catch (I2CFactory.UnsupportedBusNumberException e) {
@@ -35,10 +33,7 @@ public class BME280Device extends Device {
         do {
             Thread.sleep(10000);
         } while (!device.isRunning());
-
-
     }
-
 
     @Override
     public List<Point> getMetrics() {
@@ -67,6 +62,6 @@ public class BME280Device extends Device {
         }
 
         return Collections.singletonList(p);
-
     }
+
 }

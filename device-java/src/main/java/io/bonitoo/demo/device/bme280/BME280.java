@@ -31,7 +31,7 @@ public class BME280 {
 	70: -- -- -- -- -- -- -- 77
 	 */
 	// This next addresses is returned by "sudo i2cdetect -y 1", see above.
-	public final static int BME280_I2CADDR = 0x77;
+	public final static int BME280_I2CADDR = 0x76;
 
 	// Operating Modes
 	public final static int BME280_OSAMPLE_1 = 1;

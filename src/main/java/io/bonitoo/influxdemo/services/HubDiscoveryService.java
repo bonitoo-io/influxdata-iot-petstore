@@ -1,23 +1,22 @@
 package io.bonitoo.influxdemo.services;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -33,13 +32,11 @@ public class HubDiscoveryService {
     private static Logger log = LoggerFactory.getLogger(HubDiscoveryService.class);
 
     private String hubUrl;
-
-    private String multicastPort;
+    private int multicastPort;
     private String multicastAddress;
 
     @Autowired
-    private ApplicationContext applicationContext;
-
+    private Environment environment;
 
     public String getHubApi() {
 
@@ -48,7 +45,7 @@ public class HubDiscoveryService {
         } else {
             try {
                 String host = InetAddress.getLocalHost().getHostAddress();
-                String port = applicationContext.getBean(Environment.class).getProperty("server.port");
+                String port = environment.getProperty("server.port");
                 return "http://" + host + ":" + port + "/api";
 
             } catch (UnknownHostException ignored) {
@@ -57,57 +54,18 @@ public class HubDiscoveryService {
         throw new IllegalStateException("Unable to detect hubApi");
     }
 
-
-    List<InetAddress> listAllBroadcastAddresses() {
-        List<InetAddress> broadcastList = new ArrayList<>();
-        Enumeration<NetworkInterface> interfaces;
-        try {
-            interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = interfaces.nextElement();
-
-                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-                    continue;
-                }
-
-                networkInterface.getInterfaceAddresses().stream()
-                    .map(InterfaceAddress::getBroadcast)
-                    .filter(Objects::nonNull)
-                    .forEach(broadcastList::add);
-            }
-        } catch (SocketException e) {
-            log.error(e.getMessage(), e);
-        }
-        return broadcastList;
-    }
-
-
     @Scheduled(cron = "${petstore.multicastCron:-}")
-    public void broadcastDiscovery() {
-
-        DatagramSocket socket = null;
-
-        List<InetAddress> inetAddresses = listAllBroadcastAddresses();
-
-        for (InetAddress address : inetAddresses) {
+    public void multicastDiscovery() {
+        List<NetworkInterface> networkInterfaces = listAllMulticastInterfaces();
+        for (NetworkInterface networkInterface : networkInterfaces) {
             try {
-                socket = new DatagramSocket();
-                String broadcastMessage = "[petstore.hubUrl=" + getHubApi() + "]";
-
-                socket.setBroadcast(true);
-                byte[] buffer = broadcastMessage.getBytes();
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, Integer.parseInt(multicastPort));
-                socket.send(packet);
-
-                log.info("Sending discovery broadcast: " + broadcastMessage + " address: " + address.getHostAddress() + " ");
+                String message = "[petstore.hubUrl=" + getHubApi() + "]";
+                sendMessage(multicastAddress, networkInterface.getName(), multicastPort, message);
+                log.info("Sending multicast discovery: " + message + " address: " + multicastAddress + " iface: " + networkInterface.getName());
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
-            } finally {
-                Objects.requireNonNull(socket).close();
             }
-
         }
-
     }
 
     public String getHubUrl() {
@@ -118,11 +76,11 @@ public class HubDiscoveryService {
         this.hubUrl = hubUrl;
     }
 
-    public String getMulticastPort() {
+    public int getMulticastPort() {
         return multicastPort;
     }
 
-    public void setMulticastPort(final String multicastPort) {
+    public void setMulticastPort(final int multicastPort) {
         this.multicastPort = multicastPort;
     }
 
@@ -133,4 +91,41 @@ public class HubDiscoveryService {
     public void setMulticastAddress(final String multicastAddress) {
         this.multicastAddress = multicastAddress;
     }
+
+    public void sendMessage(String ip, String iface, int port, String message) throws IOException {
+
+        DatagramChannel datagramChannel = DatagramChannel.open();
+        datagramChannel.bind(null);
+
+        List<NetworkInterface> networkInterfaces = listAllMulticastInterfaces();
+
+        for (NetworkInterface networkInterface : networkInterfaces) {
+            networkInterface = NetworkInterface.getByName(iface);
+            datagramChannel.setOption(StandardSocketOptions.IP_MULTICAST_IF, networkInterface);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(message.getBytes());
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, port);
+            datagramChannel.send(byteBuffer, inetSocketAddress);
+        }
+    }
+
+    private List<NetworkInterface> listAllMulticastInterfaces() {
+        List<NetworkInterface> ret = new ArrayList<>();
+        Enumeration<NetworkInterface> interfaces;
+        try {
+            interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+
+                if (networkInterface.isLoopback() || !networkInterface.isUp() || !networkInterface.supportsMulticast()) {
+                    continue;
+                }
+
+                ret.add(networkInterface);
+            }
+        } catch (SocketException e) {
+            log.error(e.getMessage(), e);
+        }
+        return ret;
+    }
+
 }
