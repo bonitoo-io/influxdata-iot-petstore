@@ -51,6 +51,7 @@ public class DeviceDiscovery extends Thread {
                     running = false;
                     if (device != null) {
                         device.setHubApiUrl(url);
+                        break;
                     }
                 } catch (Exception e) {
                     log.warn("iface: " + networkInterface.getName() + " ," + e.getMessage());
