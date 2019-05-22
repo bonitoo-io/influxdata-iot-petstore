@@ -1,9 +1,15 @@
-package io.bonitoo.influxdemo.services.domain;
+package io.bonitoo.influxdemo.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class DeviceInfo {
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
+@KeySpace("device")
+public class DeviceInfo implements Serializable {
+
+    @Id
     private String deviceNumber;
     private String name;
     private String deviceType;
@@ -11,6 +17,7 @@ public class DeviceInfo {
     private String authId;
     private String authToken;
 
+    private Date createdAt;
     private Date lastSeen;
     private String remoteAddress;
 
@@ -60,6 +67,14 @@ public class DeviceInfo {
 
     public void setAuthToken(final String authToken) {
         this.authToken = authToken;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(final Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Date getLastSeen() {

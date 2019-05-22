@@ -1,8 +1,8 @@
 package io.bonitoo.influxdemo.services;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,8 +14,9 @@ import org.influxdata.client.domain.Permission;
 import org.influxdata.client.domain.PermissionResource;
 import org.influxdata.query.FluxTable;
 import org.influxdata.spring.influx.InfluxDB2Properties;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
+import io.bonitoo.influxdemo.services.data.DeviceInfoRepository;
 
-import io.bonitoo.influxdemo.services.domain.DeviceInfo;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,17 +27,19 @@ public class DeviceRegistryService {
 
     private final InfluxDBClient influxDBClient;
     private final InfluxDB2Properties properties;
+    private final DeviceInfoRepository repository;
 
-    //map holding device number and authorizations id
-    private List<DeviceInfo> list = new ArrayList<>();
+    public DeviceRegistryService(final InfluxDBClient influxDBClient,
+                                 final InfluxDB2Properties properties,
+                                 final DeviceInfoRepository repository) {
 
-    public DeviceRegistryService(final InfluxDBClient influxDBClient, InfluxDB2Properties properties) {
         this.influxDBClient = influxDBClient;
         this.properties = properties;
+        this.repository = repository;
     }
 
     public Optional<DeviceInfo> getDeviceInfo(String deviceId) {
-        return list.stream().filter(d -> d.getDeviceNumber().equals(deviceId)).findFirst();
+        return repository.findById(deviceId);
     }
 
     public void registerDevice(String deviceNumber, String remoteAddress) {
@@ -45,11 +48,12 @@ public class DeviceRegistryService {
         DeviceInfo dev = deviceInfo.orElse(new DeviceInfo());
         dev.setRemoteAddress(remoteAddress);
         dev.setDeviceNumber(deviceNumber);
+        dev.setCreatedAt(new Date());
         dev.setAuthorized(false);
         dev.setAuthId(null);
 
         if (!deviceInfo.isPresent()) {
-            list.add(dev);
+            repository.save(dev);
         }
     }
     public String getDeviceName(String id) {
@@ -80,35 +84,39 @@ public class DeviceRegistryService {
                 AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
                 authorizationsApi.deleteAuthorization(d.getAuthId());
             }
-            list.remove(d);
+            repository.deleteById(deviceId);
         });
 
     }
 
     public List<DeviceInfo> getDeviceInfos() {
-        return Collections.unmodifiableList((list));
+        return repository.findAllByOrderByCreatedAt();
     }
 
     public List<DeviceInfo> getDeviceInfos(final int offset, final int limit) {
-        return list.subList(offset, offset + limit);
+        return getDeviceInfos().subList(offset, offset + limit);
     }
 
-    public void authorizeDevice(String deviceId) {
-        AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
-
-        Authorization a = new Authorization();
-        a.setOrgID(properties.getOrg());
-        a.setStatus(AuthorizationUpdateRequest.StatusEnum.ACTIVE);
-        a.setDescription(deviceId);
-
-        a.setPermissions(createWritePermissions());
-
-        Authorization authorization = authorizationsApi.createAuthorization(a);
-
+    public void authorizeDevice(String deviceId, final String deviceName) {
         Optional<DeviceInfo> infoOptional = getDeviceInfo(deviceId);
         infoOptional.ifPresent(device -> {
+
+            AuthorizationsApi authorizationsApi = influxDBClient.getAuthorizationsApi();
+
+            Authorization a = new Authorization();
+            a.setOrgID(properties.getOrg());
+            a.setStatus(AuthorizationUpdateRequest.StatusEnum.ACTIVE);
+            a.setDescription(deviceId);
+
+            a.setPermissions(createWritePermissions());
+
+            Authorization authorization = authorizationsApi.createAuthorization(a);
+
+            device.setName(deviceName);
             device.setAuthToken(authorization.getToken());
             device.setAuthId(authorization.getId());
+
+            repository.save(device);
         });
 
         if (!infoOptional.isPresent()) {

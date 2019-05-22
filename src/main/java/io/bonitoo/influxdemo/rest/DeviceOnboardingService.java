@@ -9,7 +9,9 @@ import org.influxdata.spring.influx.InfluxDB2Properties;
 
 import io.bonitoo.influxdemo.rest.models.OnboardingResponse;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
-import io.bonitoo.influxdemo.services.domain.DeviceInfo;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
+import io.bonitoo.influxdemo.services.data.DeviceInfoRepository;
+
 import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -33,11 +35,17 @@ public class DeviceOnboardingService {
     private static Logger log = LoggerFactory.getLogger(DeviceOnboardingService.class);
 
     private final DeviceRegistryService deviceRegistry;
+    private final DeviceInfoRepository repository;
 
     @Autowired
-    public DeviceOnboardingService(final InfluxDB2Properties properties, final DeviceRegistryService deviceRegistryService) {
+    public DeviceOnboardingService(final InfluxDB2Properties properties,
+                                   final DeviceRegistryService deviceRegistryService,
+                                   final DeviceInfoRepository repository) {
+
         this.properties = properties;
         this.deviceRegistry = deviceRegistryService;
+        this.repository = repository;
+
     }
 
     @RequestMapping(value = "/register/{id}", method = RequestMethod.GET)
@@ -82,6 +90,7 @@ public class DeviceOnboardingService {
         //device is already authorized
         if (info.isAuthorized()) {
             info.setLastSeen(new Date());
+            repository.save(info);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
 
@@ -96,6 +105,8 @@ public class DeviceOnboardingService {
         resp.setDeviceId(id);
 
         info.setAuthorized(true);
+
+        repository.save(info);
 
         return ResponseEntity.ok(resp);
 

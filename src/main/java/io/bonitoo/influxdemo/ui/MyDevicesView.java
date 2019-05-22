@@ -32,7 +32,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import io.bonitoo.influxdemo.MainLayout;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
-import io.bonitoo.influxdemo.services.domain.DeviceInfo;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,9 +186,8 @@ public class MyDevicesView extends VerticalLayout {
                             deviceNameField.setErrorMessage("Device name is required!");
                             return;
                         }
-                        deviceRegistryService.authorizeDevice(d.getDeviceNumber());
+                        deviceRegistryService.authorizeDevice(d.getDeviceNumber(), deviceNameField.getValue());
                         Notification.show("Device " + d.getDeviceNumber() + " was authorized. ");
-                        d.setName(deviceNameField.getValue());
                         deviceGrid.getDataProvider().refreshItem(d);
                         dialog.close();
                     });
@@ -205,7 +204,6 @@ public class MyDevicesView extends VerticalLayout {
 //            if (d.isAuthorized()) {
                 // button for saving the name to backend
                 Button remove = new Button("Remove", event -> {
-                    d.setAuthorized(true);
                     deviceRegistryService.removeDeviceInfo(d.getDeviceNumber());
                     deviceGrid.getDataProvider().refreshItem(d);
 
