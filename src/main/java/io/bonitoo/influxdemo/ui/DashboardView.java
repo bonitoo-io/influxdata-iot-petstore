@@ -3,6 +3,7 @@ package io.bonitoo.influxdemo.ui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.influxdata.client.InfluxDBClient;
@@ -11,14 +12,10 @@ import org.influxdata.query.FluxColumn;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
 import org.influxdata.spring.influx.InfluxDB2Properties;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.DataGenerator;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.AxisTitle;
 import com.vaadin.flow.component.charts.model.AxisType;
@@ -30,15 +27,16 @@ import com.vaadin.flow.component.charts.model.Labels;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.shared.Registration;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.services.DeviceRegistryService;
+import io.bonitoo.influxdemo.services.domain.DeviceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,108 +52,84 @@ public class DashboardView extends VerticalLayout {
     private static String[] rangeStartValues = new String[]{"-1m", "-3m", "-5m", "-15m", "-30m", "-1h", "-5h"};
     private static String[] windowAggregates = new String[]{"4s", "3s", "20s", "30s", "1m", "2m", "10m"};
 
-    private final Chart chartTemperature;
-    private final FluxChartSettings chartHumiditySettings;
-    private final Chart chartHumidity;
-    private final FluxChartSettings osBeanChartSettings;
-    private final FluxChartSettings memBeanChartSettings;
-    private final Chart osBeanChart;
-    private final Chart memBeanChart;
-    private TextField statusLabel;
-    private ComboBox<String> rangeCombo;
     private FluxChartSettings chartTemperatureSettings;
+    private FluxChartSettings chartHumiditySettings;
+    private FluxChartSettings chartPressureSettings;
 
-    final
-    InfluxDBClient influxDBClient;
+    private Chart chartTemperature;
+    private Chart chartHumidity;
+    private Chart chartPressure;
 
-    final
-    DataGenerator dataGenerator;
+    private ComboBox<String> rangeCombo;
+
+    private final InfluxDBClient influxDBClient;
+    private DeviceRegistryService deviceRegistryService;
 
     @Autowired
     public DashboardView(final InfluxDBClient influxDBClient,
                          final InfluxDB2Properties properties,
-                         final DataGenerator dataGenerator) {
+                         final DeviceRegistryService registryService) {
+        this.deviceRegistryService = registryService;
         this.influxDBClient = influxDBClient;
-        this.dataGenerator = dataGenerator;
+
+
+        List<String> deviceNumbers = registryService.getDeviceInfos().stream()
+            .filter(DeviceInfo::isAuthorized)
+            .map(DeviceInfo::getDeviceNumber)
+            .collect(Collectors.toList());
+
+        String bucketName = properties.getBucket();
+
+        if (deviceNumbers.isEmpty()) {
+
+            add(new Label("No authorized devices found. "));
+            return;
+        }
 
         setClassName("dashboard");
         setSizeFull();
-
-        statusLabel = new TextField();
-        statusLabel.setWidth("90%");
-        statusLabel.setEnabled(false);
-        statusLabel.setValue(dataGenerator.isRunning() ? "Running" : "Not running.");
-        statusLabel.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-
-        add(statusLabel);
-
-        HorizontalLayout hl = new HorizontalLayout();
-        hl.setWidth("100%");
-        add(hl);
-
-        Button writeButton = new Button(dataGenerator.isRunning() ? "Stop write" : "Start write");
-        writeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        writeButton.addClickListener(event ->
-        {
-            if (dataGenerator.isRunning()) {
-                dataGenerator.stopGenerator();
-            } else {
-                dataGenerator.startGenerator();
-            }
-            statusLabel.setValue(dataGenerator.isRunning() ? "Running" : "Not running.");
-            writeButton.setText(dataGenerator.isRunning() ? "Stop write" : "Start write");
-        });
 
         rangeCombo = new ComboBox<>("Range start", rangeStartValues);
         rangeCombo.setRequired(true);
         final String rangeStart = "-5m";
         rangeCombo.setValue(rangeStart);
 
-
-        add(writeButton);
         add(rangeCombo);
 
-        String bucketName = properties.getBucket();
-        chartTemperatureSettings = new FluxChartSettings("Temperature", bucketName, "sensor",
+
+        chartTemperatureSettings = new FluxChartSettings("Temperature °C", bucketName, "sensor",
             new String[]{"temperature"},
-            new TagStructure[]{new TagStructure("location", "Prague", "San Francisco"),
-                new TagStructure("sid", "sensor1", "sensor2")},
+            new TagStructure[]{
+                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
             null, 40, ChartType.SPLINE);
 
         chartTemperature = createChart(chartTemperatureSettings);
 
 
 //        chartTemperature.setWidth("80%");
-        chartTemperature.setHeight("400px");
+        chartTemperature.setHeight("300px");
 
-        chartHumiditySettings = new FluxChartSettings("Humidity", bucketName, "sensor",
+        chartHumiditySettings = new FluxChartSettings("Humidity %", bucketName, "sensor",
             new String[]{"humidity"},
             new TagStructure[]{
-                new TagStructure("location", "Prague", "San Francisco"),
-                new TagStructure("sid", "sensor1", "sensor2")},
-            null, 80, ChartType.SPLINE);
+                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
+            null, 0, ChartType.SPLINE);
 
         chartHumidity = createChart(chartHumiditySettings);
+        chartHumidity.setHeight("300px");
 
 
-//        chartHumidity.setWidth("80%");
-        chartHumidity.setHeight("400px");
+        chartPressureSettings = new FluxChartSettings("Pressure hPa", bucketName, "sensor",
+            new String[]{"pressure"},
+            new TagStructure[]{
+                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
+            null, 0, ChartType.SPLINE);
+        chartPressure = createChart(chartPressureSettings);
+
+        chartPressure.setHeight("300px");
 
 
-        osBeanChartSettings = new FluxChartSettings("CPU", bucketName, "operatingSystemMXBean",
-            new String[]{"SystemCpuLoad", "ProcessCpuLoad"}, null, null, 0, ChartType.SPLINE);
-        osBeanChart = createChart(osBeanChartSettings);
-//        osBeanChart.setWidth("80%");
-        osBeanChart.setHeight("400px");
-
-        memBeanChartSettings = new FluxChartSettings("Memory", bucketName, "memoryMXBean",
-            new String[]{"HeapMemoryUsage.max", "HeapMemoryUsage.used"}, null, null, 0, ChartType.AREA);
-        memBeanChart = createChart(memBeanChartSettings);
-        memBeanChart.setHeight("400px");
-//        memBeanChart.setWidth("80%");
-
-
-        add(chartTemperature, chartHumidity, osBeanChart, memBeanChart);
+        add(chartTemperature, chartHumidity, chartPressure);
 
     }
 
@@ -168,12 +142,14 @@ public class DashboardView extends VerticalLayout {
         getUI().ifPresent(ui -> {
             ui.setPollInterval(2000);
 
+
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");
-                refreshChart(chartHumidity, chartHumiditySettings);
-                refreshChart(chartTemperature, chartTemperatureSettings);
-                refreshChart(osBeanChart, osBeanChartSettings);
-                refreshChart(memBeanChart, memBeanChartSettings);
+                if (chartHumiditySettings != null) {
+                    refreshChart(chartHumidity, chartHumiditySettings);
+                    refreshChart(chartTemperature, chartTemperatureSettings);
+                    refreshChart(chartPressure, chartPressureSettings);
+                }
             });
 
             ui.addDetachListener(l -> {
@@ -227,7 +203,7 @@ public class DashboardView extends VerticalLayout {
 
         for (FluxTable fluxTable : tables) {
             DataSeries dataSeries = new DataSeries();
-            dataSeries.setName(getSeriesName(fluxTable));
+            dataSeries.setName(getSeriesNameDevice(fluxTable));
             configuration.addSeries(dataSeries);
             List<FluxRecord> records = fluxTable.getRecords();
             for (FluxRecord fluxRecord : records) {
@@ -278,6 +254,11 @@ public class DashboardView extends VerticalLayout {
             });
         }
         chart.drawChart();
+    }
+
+    public String getSeriesNameDevice(final FluxTable fluxTable) {
+        FluxRecord fluxRecord = fluxTable.getRecords().get(0);
+        return deviceRegistryService.getDeviceName(Objects.requireNonNull(fluxRecord.getValueByKey("sid")).toString());
     }
 
     /**
@@ -369,4 +350,22 @@ public class DashboardView extends VerticalLayout {
         return fluxQueryBase.toString();
     }
 
+
+    /*
+
+    from(bucket: "my-bucket")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r._measurement == "sensor")
+  |> filter(fn: (r) => r._field == "humidity")
+  |> filter(fn: (r) => r.sid == "sid" or r.sid == "000000006746fb23")   |> aggregateWindow(every: 20s, fn:mean)
+
+
+  from(bucket: "my-bucket")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r._measurement == "sensor")
+  |> filter(fn: (r) => r._field == "humidity")
+  |> filter(fn: (r) => )   |> aggregateWindow(every: 20s, fn:mean)
+
+
+     */
 }

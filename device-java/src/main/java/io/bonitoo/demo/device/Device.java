@@ -157,6 +157,7 @@ public class Device {
         p.addTag("sid", getDeviceNumber());
         p.addField("temperature", random(10, 40));
         p.addField("humidity", random(0, 100));
+        p.addField("pressure", random(900, 1000));
 
         return Collections.singletonList(p);
     }
