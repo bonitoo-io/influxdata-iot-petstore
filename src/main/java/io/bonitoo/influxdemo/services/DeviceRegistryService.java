@@ -12,11 +12,14 @@ import org.influxdata.client.domain.Authorization;
 import org.influxdata.client.domain.AuthorizationUpdateRequest;
 import org.influxdata.client.domain.Permission;
 import org.influxdata.client.domain.PermissionResource;
+import org.influxdata.query.FluxRecord;
 import org.influxdata.query.FluxTable;
 import org.influxdata.spring.influx.InfluxDB2Properties;
+
 import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.data.DeviceInfoRepository;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,6 +27,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class DeviceRegistryService {
+
+    private static Logger log = LoggerFactory.getLogger(DeviceRegistryService.class);
 
     private final InfluxDBClient influxDBClient;
     private final InfluxDB2Properties properties;
@@ -162,9 +167,15 @@ public class DeviceRegistryService {
                 "  |> keep(columns: [\"_time\",\"_value\"])\n" +
                 "  |> last()";
 
-            List<FluxTable> query = influxDBClient.getQueryApi().query(s);
+            List<FluxTable> query;
+            try {
+                query = influxDBClient.getQueryApi().query(s);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                return null;
+            }
 
-            return query.stream().flatMap(fluxTable -> fluxTable.getRecords().stream()).findFirst().map(r -> r.getTime()).orElse(null);
+            return query.stream().flatMap(fluxTable -> fluxTable.getRecords().stream()).findFirst().map(FluxRecord::getTime).orElse(null);
 
         }
 

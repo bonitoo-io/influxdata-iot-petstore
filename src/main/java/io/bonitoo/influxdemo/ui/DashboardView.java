@@ -35,8 +35,8 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.shared.Registration;
 import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
-import io.bonitoo.influxdemo.services.domain.DeviceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -349,23 +349,4 @@ public class DashboardView extends VerticalLayout {
 
         return fluxQueryBase.toString();
     }
-
-
-    /*
-
-    from(bucket: "my-bucket")
-  |> range(start: -5m)
-  |> filter(fn: (r) => r._measurement == "sensor")
-  |> filter(fn: (r) => r._field == "humidity")
-  |> filter(fn: (r) => r.sid == "sid" or r.sid == "000000006746fb23")   |> aggregateWindow(every: 20s, fn:mean)
-
-
-  from(bucket: "my-bucket")
-  |> range(start: -5m)
-  |> filter(fn: (r) => r._measurement == "sensor")
-  |> filter(fn: (r) => r._field == "humidity")
-  |> filter(fn: (r) => )   |> aggregateWindow(every: 20s, fn:mean)
-
-
-     */
 }
