@@ -31,8 +31,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.services.DeviceRegistryService;
 import io.bonitoo.influxdemo.domain.DeviceInfo;
+import io.bonitoo.influxdemo.services.DeviceRegistryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -201,7 +201,7 @@ public class MyDevicesView extends VerticalLayout {
                 buttons.add(authorize);
             }
 
-//            if (d.isAuthorized()) {
+            if (d.isAuthorized()) {
                 // button for saving the name to backend
                 Button remove = new Button("Remove", event -> {
                     deviceRegistryService.removeDeviceInfo(d.getDeviceNumber());
@@ -212,7 +212,7 @@ public class MyDevicesView extends VerticalLayout {
                 remove.addThemeVariants(ButtonVariant.LUMO_SMALL);
                 remove.addThemeVariants(ButtonVariant.LUMO_ERROR);
                 buttons.add(remove);
-//            }
+            }
             // layouts for placing the text field on top of the buttons
             return new VerticalLayout(buttons);
 
@@ -230,7 +230,7 @@ public class MyDevicesView extends VerticalLayout {
         super.onAttach(attachEvent);
 
         getUI().ifPresent(ui -> {
-            ui.setPollInterval(2000);
+            ui.setPollInterval(1000);
 
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");

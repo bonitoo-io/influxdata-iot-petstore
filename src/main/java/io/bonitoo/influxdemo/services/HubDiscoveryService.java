@@ -61,7 +61,7 @@ public class HubDiscoveryService {
             try {
                 String message = "[petstore.hubUrl=" + getHubApi() + "]";
                 sendMessage(multicastAddress, networkInterface.getName(), multicastPort, message);
-                log.info("Sending multicast discovery: " + message + " address: " + multicastAddress + " iface: " + networkInterface.getName());
+                log.debug("Sending multicast discovery: " + message + " address: " + multicastAddress + " iface: " + networkInterface.getName());
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }

@@ -91,6 +91,8 @@ public class DashboardView extends VerticalLayout {
 
         rangeCombo = new ComboBox<>("Range start", rangeStartValues);
         rangeCombo.setRequired(true);
+        rangeCombo.setAllowCustomValue(false);
+
         final String rangeStart = "-5m";
         rangeCombo.setValue(rangeStart);
 
