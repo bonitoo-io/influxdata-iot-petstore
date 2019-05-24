@@ -168,6 +168,7 @@ public class MyDevicesView extends VerticalLayout {
 
 
                     TextField deviceNameField = new TextField("Enter device name: ");
+                    deviceNameField.setValue(d.getDeviceNumber());
                     deviceNameField.setRequired(true);
                     formLayout.addFormItem(deviceNameField, "");
 

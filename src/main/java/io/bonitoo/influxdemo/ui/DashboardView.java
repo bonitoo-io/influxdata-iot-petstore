@@ -49,8 +49,6 @@ public class DashboardView extends VerticalLayout {
     private static Logger log = LoggerFactory.getLogger(DashboardView.class);
 
     public static final String VIEW_NAME = "Dashboard";
-    private static String[] rangeStartValues = new String[]{"-1m", "-3m", "-5m", "-15m", "-30m", "-1h", "-5h"};
-    private static String[] windowAggregates = new String[]{"4s", "3s", "20s", "30s", "1m", "2m", "10m"};
 
     private FluxChartSettings chartTemperatureSettings;
     private FluxChartSettings chartHumiditySettings;
@@ -89,12 +87,11 @@ public class DashboardView extends VerticalLayout {
         setClassName("dashboard");
         setSizeFull();
 
-        rangeCombo = new ComboBox<>("Range start", rangeStartValues);
+        rangeCombo = new ComboBox<String>("Range start");
+        rangeCombo.setItems(Utils.getTimeRangeList());
         rangeCombo.setRequired(true);
         rangeCombo.setAllowCustomValue(false);
-
-        final String rangeStart = "-5m";
-        rangeCombo.setValue(rangeStart);
+        Utils.getTimeRangeList().findFirst().ifPresent(rangeCombo::setValue);
 
         add(rangeCombo);
 
@@ -200,7 +197,7 @@ public class DashboardView extends VerticalLayout {
 
         configuration.getTooltip().setEnabled(true);
         configuration.getLegend().setEnabled(true);
-        final String fluxQueryBase = constructQuery(fs.bucket, rangeCombo.getValue(), fs.measurement, fs.filterFields, fs.filterTags);
+        final String fluxQueryBase = constructQuery(fs.bucket, Utils.rangeValue(rangeCombo.getValue()), fs.measurement, fs.filterFields, fs.filterTags);
         List<FluxTable> tables = queryInfluxDB(fluxQueryBase);
 
         for (FluxTable fluxTable : tables) {
@@ -235,7 +232,7 @@ public class DashboardView extends VerticalLayout {
     }
 
     private void refreshChart(Chart chart, FluxChartSettings fs) {
-        String query = constructQuery(fs.bucket, rangeCombo.getValue(),
+        String query = constructQuery(fs.bucket, Utils.rangeValue(rangeCombo.getValue()),
             fs.measurement, fs.filterFields, fs.filterTags);
 
         List<FluxTable> fluxTables = queryInfluxDB(query);
@@ -344,9 +341,11 @@ public class DashboardView extends VerticalLayout {
             });
         }
 
-        int index = Arrays.asList(rangeStartValues).indexOf(rangeStart);
-        String windowAggregate = windowAggregates[index];
-        fluxQueryBase.append("   |> aggregateWindow(every: " + windowAggregate + ", fn:mean)");
+
+        String windowAggregate = Utils.agregateWindow(rangeStart);
+        if (windowAggregate!= null) {
+            fluxQueryBase.append("   |> aggregateWindow(every: " + windowAggregate + ", fn:mean)");
+        }
         log.debug(fluxQueryBase.toString());
 
         return fluxQueryBase.toString();

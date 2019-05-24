@@ -1,12 +1,9 @@
 package io.bonitoo.influxdemo.ui;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Stream;
 
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
@@ -132,8 +129,8 @@ public class BrowseDataView extends HorizontalLayout {
         timeRangeBox = new ComboBox<>();
         timeRangeBox.setLabel("Time range");
         timeRangeBox.setWidth("100%");
-        timeRangeBox.setItems(getTimeRangeList());
-        getTimeRangeList().findFirst().ifPresent(timeRangeBox::setValue);
+        timeRangeBox.setItems(Utils.getTimeRangeList());
+        Utils.getTimeRangeList().findFirst().ifPresent(timeRangeBox::setValue);
         filterLayout.add(timeRangeBox);
 
         measurementsCombo = new MultiselectComboBox<>();
@@ -150,7 +147,7 @@ public class BrowseDataView extends HorizontalLayout {
         measurementsCombo.addValueChangeListener(event -> {
             selectedMeasurements = event.getValue();
             fieldsBox.setItems(this.influxDBService.getFields(selectedBucket, selectedMeasurements));
-            tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
+            tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, Utils.rangeValue(timeRangeBox.getValue()), null));
 
         });
 
@@ -159,11 +156,11 @@ public class BrowseDataView extends HorizontalLayout {
         tagsValuesBox = new MultiselectComboBox<>();
 
         tagsKeysBox.setLabel("Tags");
-        tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, rangeValue(timeRangeBox.getValue()), null));
+        tagsKeysBox.setItems(this.influxDBService.getTagKeys(selectedBucket, Utils.rangeValue(timeRangeBox.getValue()), null));
         tagsKeysBox.addValueChangeListener(event -> {
             selectedTags = event.getValue();
             tagsValuesBox.setItems(this.influxDBService.getTagValues(selectedBucket, tagsKeysBox.getSelectedItems(),
-                rangeValue(timeRangeBox.getValue()), null));
+                Utils.rangeValue(timeRangeBox.getValue()), null));
         });
 
         filterLayout.add(tagsKeysBox);
@@ -223,15 +220,6 @@ public class BrowseDataView extends HorizontalLayout {
         executeFlux(resultLayout);
     }
 
-    private Stream<String> getTimeRangeList() {
-
-        String[] ret = new String[]{
-            "Past 5m", "Past 30m", "Past 1h", "Past 6h", "Past 12h", "Past 24h", "Past 2d", "Past 7d", "Past 30d"};
-
-        return Arrays.stream(ret);
-
-    }
-
     private void executeFlux(VerticalLayout contentLayout) {
 
         contentLayout.removeAll();
@@ -268,7 +256,7 @@ public class BrowseDataView extends HorizontalLayout {
                     //on complete
                     log.info("Query completed.");
                     current.accessSynchronously(() -> {
-                        contentLayout.add(createGrid(records));
+                        contentLayout.add(Utils.createGrid(records));
                         notifyComplete(stopWatch, current, statusLabel, progressBar);
                     });
                 });
@@ -340,37 +328,12 @@ public class BrowseDataView extends HorizontalLayout {
         contentLayout.add(chart);
     }
 
-    public static Grid<FluxRecord> createGrid(final List<FluxRecord> records) {
-        Grid<FluxRecord> grid = new Grid<>(FluxRecord.class);
-        grid.setSizeFull();
-        grid.getColumnByKey("values").setVisible(false);
-        grid.getColumns().forEach(c -> c.setResizable(true));
-
-        grid.setItems(records);
-        if (records.size() > 0) {
-            FluxRecord fluxRecord = records.get(0);
-            Map<String, Object> values = fluxRecord.getValues();
-
-            values.keySet().forEach(key -> {
-
-                if (grid.getColumnByKey(key) == null) {
-                    if (!key.startsWith("_") && !"result".equals(key)) {
-                        //add columns with tags
-                        grid.addColumn(record -> record.getValueByKey(key)).setKey(key).setHeader(key);
-                    }
-                }
-            });
-        }
-
-        return grid;
-    }
-
     private String createFluxQuery() {
 
         StringBuilder q = new StringBuilder("from(bucket: \"" + selectedBucket + "\") \n");
 
         timeRangeBox.getOptionalValue().ifPresent(timeRange -> {
-            q.append("  |> range (start: ").append(rangeValue(timeRange)).append(",stop: now() )\n");
+            q.append("  |> range (start: ").append(Utils.rangeValue(timeRange)).append(",stop: now() )\n");
         });
 
         q.append(influxDBService.createOrFilter("_measurement ", measurementsCombo.getSelectedItems()));
@@ -383,10 +346,6 @@ public class BrowseDataView extends HorizontalLayout {
         }
 
         return q.toString();
-    }
-
-    private String rangeValue(String rangeLabel) {
-        return rangeLabel.replace("Past ", "-");
     }
 
 }

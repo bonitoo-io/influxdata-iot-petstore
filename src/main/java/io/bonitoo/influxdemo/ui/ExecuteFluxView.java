@@ -7,7 +7,6 @@ import org.influxdata.client.InfluxDBClient;
 import org.influxdata.client.QueryApi;
 import org.influxdata.query.FluxRecord;
 import org.influxdata.spring.influx.InfluxDB2Properties;
-import io.bonitoo.influxdemo.MainLayout;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -21,6 +20,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import io.bonitoo.influxdemo.MainLayout;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,7 +127,7 @@ public class ExecuteFluxView extends HorizontalLayout {
                         verticalLayout.remove(grid);
                     }
 
-                    grid = BrowseDataView.createGrid(records);
+                    grid = Utils.createGrid(records);
                     verticalLayout.add(grid);
                     BrowseDataView.notifyComplete(stopWatch, current, statusLabel, progressBar);
                 });
