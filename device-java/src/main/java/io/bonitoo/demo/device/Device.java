@@ -38,12 +38,11 @@ public class Device {
 
     private static Logger log = LoggerFactory.getLogger(Device.class);
 
-    //iot hub hubApiUrl
     private String hubApiUrl;
     private String deviceNumber;
+    private InfluxDBClient influxDBClient;
     private OkHttpClient client;
     private OnboardingResponse config;
-    private InfluxDBClient influxDBClient;
     private WriteApi writeApi;
     private ScheduledExecutorService executor;
 
@@ -60,6 +59,12 @@ public class Device {
         //write intervat in MS
         this.interval = 5000;
         this.intervalUnit = TimeUnit.MILLISECONDS;
+
+        this.config = loadConfig();
+        if (this.config != null) {
+            setupDevice(config);
+        }
+
         startScheduler();
     }
 
@@ -85,16 +90,12 @@ public class Device {
     }
 
 
-    private String getConfigFileName() {
-        return System.getProperty("config", "./iot-device.conf");
-    }
-
     private OnboardingResponse loadConfig() {
-        File file = null;
+        File file;
         try {
             file = new File(getConfigFileName());
         } catch (Exception e) {
-            log.error("Invalid config location: "+getConfigFileName(), e.getLocalizedMessage());
+            log.error("Invalid config location: " + getConfigFileName(), e.getLocalizedMessage());
             return null;
         }
         OnboardingResponse conf = null;
@@ -118,16 +119,7 @@ public class Device {
      */
     private void register() {
 
-        OnboardingResponse config = loadConfig();
-
-        if (config != null) {
-            boolean success = setupDevice(config);
-            if (success) {
-                return;
-            }
-        }
-
-        if (hubApiUrl == null) {
+        if (hubApiUrl == null && config == null) {
             log.info("Searching for hub...");
             return;
         }
@@ -140,7 +132,11 @@ public class Device {
             log.debug("Registration response status: " + code + " : " + jsonBody);
             switch (code) {
                 case 200: {
-                    setupDevice(jsonBody);
+                    Gson gson = new GsonBuilder().create();
+                    boolean b = setupDevice(gson.fromJson(jsonBody, OnboardingResponse.class));
+                    if (b) {
+                        saveConfig();
+                    }
                     return;
                 }
                 case 201: {
@@ -156,54 +152,34 @@ public class Device {
         }
     }
 
-    private void saveConfig(OnboardingResponse config) {
 
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        try {
-            log.info("Saving configuration to: " + getConfigFileName());
-            FileWriter writer = new FileWriter(getConfigFileName());
-            gson.toJson(config, writer);
-            writer.flush();
-            writer.close();
+    private boolean setupDevice(OnboardingResponse config) {
 
-        } catch (IOException e) {
-            log.error("Unable to save configuration file.", e);
-        }
-
-    }
-
-    boolean setupDevice(OnboardingResponse config) {
         influxDBClient = InfluxDBClientFactory.create(config.url, config.authToken.toCharArray());
-
         Check health = influxDBClient.health();
-
         this.config = config;
 
         writeApi = influxDBClient.getWriteApi();
 
         writeApi.listenEvents(WriteSuccessEvent.class, (
             event) -> log.info("Write success. " + event.getLineProtocol()));
+
         writeApi.listenEvents(WriteErrorEvent.class,
             (event) -> {
                 log.info("Write error " + event.getThrowable().getLocalizedMessage());
                 this.config = null;
-                new File(getConfigFileName()).delete();
+
+                if (new File(getConfigFileName()).delete()) {
+                    log.info("Config was reset.");
+                }
             });
         writeApi.listenEvents(WriteRetriableErrorEvent.class,
             (event) -> log.info("Retryable Write error " + event.getThrowable().getLocalizedMessage()));
 
-        if (health.getStatus().equals(Check.StatusEnum.PASS)) {
-            saveConfig(config);
-            return true;
-        }
+        return health.getStatus().equals(Check.StatusEnum.PASS);
 
-        return false;
     }
 
-    boolean setupDevice(final String jsonConfig) {
-        Gson gson = new GsonBuilder().create();
-        return setupDevice(gson.fromJson(jsonConfig, OnboardingResponse.class));
-    }
 
     private void loop() {
         //if device is not registered -> register
@@ -239,8 +215,8 @@ public class Device {
         this.hubApiUrl = url;
     }
 
-    boolean isRegistered() {
-        return config != null;
+    public String getHubApiUrl() {
+        return hubApiUrl;
     }
 
     //registration api response
@@ -259,9 +235,7 @@ public class Device {
         return rangeMin + (rangeMax - rangeMin) * r.nextDouble();
     }
 
-
     private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
     private String randomAlphaNumeric(int count) {
         StringBuilder builder = new StringBuilder();
         while (count-- != 0) {
@@ -284,8 +258,32 @@ public class Device {
         return running;
     }
 
+    boolean isRegistered() {
+        return config != null;
+    }
+
+
     public String getDeviceNumber() {
         return this.deviceNumber;
+    }
+
+    private String getConfigFileName() {
+        return System.getProperty("config", "./iot-device.conf");
+    }
+
+    private void saveConfig() {
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try {
+            log.info("Saving configuration to: " + getConfigFileName());
+            FileWriter writer = new FileWriter(getConfigFileName());
+            gson.toJson(config, writer);
+            writer.flush();
+            writer.close();
+
+        } catch (IOException e) {
+            log.error("Unable to save configuration file.", e);
+        }
     }
 
 }

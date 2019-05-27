@@ -29,7 +29,7 @@ public class DeviceDiscovery extends Thread {
     public void run() {
         log.info("Starting Hub discovery...");
         boolean running = true;
-        if (device.isRegistered()) {
+        if (device.isRegistered() && device.getHubApiUrl() != null) {
             return;
         }
 
@@ -69,7 +69,7 @@ public class DeviceDiscovery extends Thread {
     private String receiveMessage(String ip, String iface, int port) throws IOException {
 
         try (DatagramChannel datagramChannel = DatagramChannel.open(StandardProtocolFamily.INET)) {
-
+            log.info("Listening on " + iface + " ip:" + ip + ":" + port);
             NetworkInterface networkInterface = NetworkInterface.getByName(iface);
             datagramChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             datagramChannel.bind(new InetSocketAddress(port));
