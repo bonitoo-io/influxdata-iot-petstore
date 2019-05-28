@@ -1,19 +1,21 @@
 package io.bonitoo.influxdemo.services.data;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.HubDiscoveryService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,14 +33,14 @@ import org.springframework.data.map.repository.config.EnableMapRepositories;
  */
 @Configuration
 @EnableMapRepositories(value = {"io.bonitoo.influxdemo.domain", "io.bonitoo.influxdemo.services.data"},
-        keyValueTemplateRef = "persistKeyValue")
+    keyValueTemplateRef = "persistKeyValue")
 public class RepositoryConfiguration {
 
     private static Logger log = LoggerFactory.getLogger(HubDiscoveryService.class);
 
     private final String dbPath;
 
-    public RepositoryConfiguration(@Value("${petstore.db:./db.ser}") final String dbPath) {
+    public RepositoryConfiguration(@Value("${petstore.db:./db.json}") final String dbPath) {
         this.dbPath = dbPath;
     }
 
@@ -59,14 +61,13 @@ public class RepositoryConfiguration {
 
             log.info("Populate store from {}", dbPath);
 
-            try {
+            try (JsonReader reader = new JsonReader(new FileReader(dbPath))){
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Map data = gson.fromJson(reader, getType());
+                store = CollectionFactory.createMap(ConcurrentHashMap.class, 100);
+                store.putAll(data);
 
-                FileInputStream fis = new FileInputStream(dbPath);
-                BufferedInputStream bis = new BufferedInputStream(fis);
-                ObjectInputStream ois = new ObjectInputStream(bis);
-                store = (Map<String, Map<Object, Object>>) ois.readObject();
-                ois.close();
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
         }
@@ -80,7 +81,7 @@ public class RepositoryConfiguration {
     }
 
     private class PersistMapKeyValueAdapter extends MapKeyValueAdapter {
-        
+
         private final Map<String, Map<Object, Object>> store;
 
         private PersistMapKeyValueAdapter(final Map<String, Map<Object, Object>> store) {
@@ -129,16 +130,18 @@ public class RepositoryConfiguration {
 
             log.debug("Persisting store {} to {}", store, dbPath);
 
-            try {
-
-                FileOutputStream fos = new FileOutputStream(dbPath);
-                BufferedOutputStream bos = new BufferedOutputStream(fos);
-                ObjectOutputStream oos = new ObjectOutputStream(bos);
-                oos.writeObject(store);
-                oos.close();
+            try (FileWriter writer = new FileWriter(dbPath)) {
+                Gson gson = new GsonBuilder().create();
+                gson.toJson(store,getType(), writer);
             } catch (IOException e) {
                 log.error(e.getMessage(), e);
             }
         }
     }
+
+    private Type getType() {
+        return new TypeToken<HashMap<String, HashMap<String, DeviceInfo>>>() {
+        }.getType();
+    }
+
 }

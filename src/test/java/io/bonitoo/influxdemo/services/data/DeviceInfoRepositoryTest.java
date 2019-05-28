@@ -8,9 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
-import io.bonitoo.influxdemo.domain.DeviceInfo;
-
 import com.google.common.collect.ImmutableList;
+import io.bonitoo.influxdemo.domain.DeviceInfo;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @author Jakub Bednar (bednar@github) (22/05/2019 09:54)
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {RepositoryConfiguration.class}, properties = {"petstore.db=./db.test.ser"})
+@SpringBootTest(classes = {RepositoryConfiguration.class}, properties = {"petstore.db=./db.test.json"})
 @EnableConfigurationProperties
 @EnableAutoConfiguration
 public class DeviceInfoRepositoryTest {
@@ -137,7 +136,7 @@ public class DeviceInfoRepositoryTest {
             deviceInfoRepository.save(device);
         });
 
-        KeyValueOperations operations = new RepositoryConfiguration("./db.test.ser").persistKeyValue();
+        KeyValueOperations operations = new RepositoryConfiguration("./db.test.json").persistKeyValue();
         Iterable<DeviceInfo> iterable = operations.findAll(DeviceInfo.class);
 
         List<DeviceInfo> devices = ImmutableList.copyOf(iterable);
