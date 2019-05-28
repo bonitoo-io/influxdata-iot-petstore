@@ -1,6 +1,7 @@
 version: '3'
 services:
   nginx:
+    container_name: proxy
     image: nginx:1.16-alpine
     ports:
       - "80:80"
@@ -10,7 +11,9 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    network_mode: host
   certbot:
+    container_name: certbot
     image: certbot/certbot
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
