@@ -215,11 +215,11 @@ public class Device {
         return Collections.singletonList(p);
     }
 
-    private String getLocation() {
+    public String getLocation() {
         return System.getProperty("location");
     }
 
-    private String getMeasurmentName() {
+    public String getMeasurmentName() {
         return System.getProperty("measurement", "air");
     }
 

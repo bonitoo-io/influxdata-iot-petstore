@@ -43,20 +43,17 @@ public class BME280Device extends Device {
             return new ArrayList<>();
         }
 
-        Point p = Point.measurement("sensor");
+        Point p = Point.measurement(getMeasurmentName());
         p.time(Instant.now(), WritePrecision.S);
+
+        String location = getLocation();
+        if (location != null) {
+            p.addTag("location", location);
+        }
         p.addTag("sid", getDeviceNumber());
         try {
             p.addField("pressure", bme280.readPressure());
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        try {
             p.addField("temperature", bme280.readTemperature());
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        try {
             p.addField("humidity", bme280.readHumidity());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
