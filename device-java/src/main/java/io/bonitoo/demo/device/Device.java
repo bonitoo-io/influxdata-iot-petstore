@@ -57,8 +57,8 @@ public class Device {
             .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE))
             .build();
         //write intervat in MS
-        this.interval = 5000;
-        this.intervalUnit = TimeUnit.MILLISECONDS;
+        this.interval = Integer.parseInt(System.getProperty("interval", "30"));
+        this.intervalUnit = TimeUnit.SECONDS;
 
         this.config = loadConfig();
         if (this.config != null) {
