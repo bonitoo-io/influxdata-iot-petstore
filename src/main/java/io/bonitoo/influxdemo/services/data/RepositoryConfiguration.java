@@ -45,7 +45,8 @@ public class RepositoryConfiguration {
     }
 
     private Map<String, Type> types = new HashMap<String, Type>() {{
-        put("devices", new TypeToken<HashMap<String, HashMap<String, DeviceInfo>>>() {}.getType());
+        put("devices", new TypeToken<HashMap<String, HashMap<String, DeviceInfo>>>() {
+        }.getType());
     }};
 
     @Bean
@@ -61,21 +62,23 @@ public class RepositoryConfiguration {
         //
         // Populate store from file
         //
-        if (new File(dbPath).exists()) {
-            for (final String typeKey : types.keySet()) {
-                Type type = types.get(typeKey);
+        for (final String typeKey : types.keySet()) {
+            Type type = types.get(typeKey);
 
-                String file = getTypeFile(typeKey);
-                log.info("Populate store from {}", file);
+            String file = getTypeFile(typeKey);
+            log.info("Populate store from {}", file);
 
-                try (JsonReader reader = new JsonReader(new FileReader(file))) {
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                    Map data = gson.fromJson(reader, type);
-                    store.putAll(data);
+            if (!new File(file).exists()) {
+                continue;
+            }
 
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                }
+            try (JsonReader reader = new JsonReader(new FileReader(file))) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Map data = gson.fromJson(reader, type);
+                store.putAll(data);
+
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
             }
         }
 

@@ -7,11 +7,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.influxdata.spring.influx.InfluxDB2Properties;
 
+import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.rest.models.OnboardingResponse;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
-import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.data.DeviceInfoRepository;
-
 import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -76,7 +75,7 @@ public class DeviceOnboardingService {
 
         //first registration
         if (!deviceInfo.isPresent()) {
-            deviceRegistry.registerDevice(id, request.getRemoteAddr());
+            deviceRegistry.registerDevice(id, getRemoteAddress(request));
             return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
@@ -112,5 +111,14 @@ public class DeviceOnboardingService {
 
     }
 
-
+    String getRemoteAddress(HttpServletRequest request) {
+        String xRealIp = request.getHeader("X-Real-IP");
+        String remoteAddress = request.getHeader("X-Forwarded-For");
+        if (xRealIp != null) {
+            return xRealIp;
+        } else if (remoteAddress != null) {
+            return remoteAddress;
+        }
+        return request.getRemoteAddr();
+    }
 }
