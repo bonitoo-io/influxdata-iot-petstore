@@ -201,14 +201,26 @@ public class Device {
     }
 
     public List<Point> getMetrics() {
-        Point p = Point.measurement("sensor");
+        Point p = Point.measurement(getMeasurmentName());
         p.time(Instant.now(), WritePrecision.S);
         p.addTag("sid", getDeviceNumber());
+        String location = getLocation();
+        if (location != null) {
+            p.addTag("location", location);
+        }
         p.addField("temperature", random(10, 40));
         p.addField("humidity", random(0, 100));
         p.addField("pressure", random(900, 1000));
 
         return Collections.singletonList(p);
+    }
+
+    private String getLocation() {
+        return System.getProperty("location");
+    }
+
+    private String getMeasurmentName() {
+        return System.getProperty("measurement", "air");
     }
 
     void setHubApiUrl(final String url) {
@@ -236,6 +248,7 @@ public class Device {
     }
 
     private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
     private String randomAlphaNumeric(int count) {
         StringBuilder builder = new StringBuilder();
         while (count-- != 0) {
