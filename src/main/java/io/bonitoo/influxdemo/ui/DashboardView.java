@@ -72,7 +72,7 @@ public class DashboardView extends VerticalLayout {
 
         List<String> deviceNumbers = registryService.getDeviceInfos().stream()
             .filter(DeviceInfo::isAuthorized)
-            .map(DeviceInfo::getDeviceNumber)
+            .map(DeviceInfo::getDeviceId)
             .collect(Collectors.toList());
 
         String bucketName = properties.getBucket();
@@ -98,7 +98,7 @@ public class DashboardView extends VerticalLayout {
         chartTemperatureSettings = new FluxChartSettings("Temperature °C", bucketName, "air",
             new String[]{"temperature"},
             new TagStructure[]{
-                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
+                new TagStructure("device_id", deviceNumbers.toArray(new String[0]))},
             null, 40, ChartType.SPLINE);
 
         chartTemperature = createChart(chartTemperatureSettings);
@@ -110,7 +110,7 @@ public class DashboardView extends VerticalLayout {
         chartHumiditySettings = new FluxChartSettings("Humidity %", bucketName, "air",
             new String[]{"humidity"},
             new TagStructure[]{
-                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
+                new TagStructure("device_id", deviceNumbers.toArray(new String[0]))},
             null, 0, ChartType.SPLINE);
 
         chartHumidity = createChart(chartHumiditySettings);
@@ -120,7 +120,7 @@ public class DashboardView extends VerticalLayout {
         chartPressureSettings = new FluxChartSettings("Pressure hPa", bucketName, "air",
             new String[]{"pressure"},
             new TagStructure[]{
-                new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
+                new TagStructure("device_id", deviceNumbers.toArray(new String[0]))},
             null, 0, ChartType.SPLINE);
         chartPressure = createChart(chartPressureSettings);
 
@@ -253,7 +253,7 @@ public class DashboardView extends VerticalLayout {
 
     public String getSeriesNameDevice(final FluxTable fluxTable) {
         FluxRecord fluxRecord = fluxTable.getRecords().get(0);
-        return deviceRegistryService.getDeviceName(Objects.requireNonNull(fluxRecord.getValueByKey("sid")).toString());
+        return deviceRegistryService.getDeviceName(Objects.requireNonNull(fluxRecord.getValueByKey("device_id")).toString());
     }
 
     /**

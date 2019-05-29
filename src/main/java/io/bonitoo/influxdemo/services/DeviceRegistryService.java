@@ -52,7 +52,7 @@ public class DeviceRegistryService {
 
         DeviceInfo dev = deviceInfo.orElse(new DeviceInfo());
         dev.setRemoteAddress(remoteAddress);
-        dev.setDeviceNumber(deviceNumber);
+        dev.setDeviceId(deviceNumber);
         dev.setCreatedAt(new Date());
         dev.setAuthorized(false);
         dev.setAuthId(null);
@@ -162,7 +162,7 @@ public class DeviceRegistryService {
 
             String s = "from(bucket: \"my-bucket\")\n" +
                 "  |> range(start: -1w)\n" +
-                "  |> filter(fn: (r) => r.sid == \"" + deviceId + "\")\n" +
+                "  |> filter(fn: (r) => r.device_id == \"" + deviceId + "\")\n" +
                 "  |> keep(columns: [\"_time\",\"_value\"])\n" +
                 "  |> last()";
 

@@ -39,7 +39,7 @@ public class Device {
     private static Logger log = LoggerFactory.getLogger(Device.class);
 
     private String hubApiUrl;
-    private String deviceNumber;
+    private String deviceId;
     private InfluxDBClient influxDBClient;
     private OkHttpClient client;
     private OnboardingResponse config;
@@ -51,7 +51,7 @@ public class Device {
     private boolean running = true;
 
     public Device() {
-        this.deviceNumber = System.getProperty("deviceNumber", randomSerialNumber());
+        this.deviceId = System.getProperty("deviceId", randomSerialNumber());
         this.hubApiUrl = System.getProperty("hubApiUrl");
         this.client = new OkHttpClient.Builder()
             .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.NONE))
@@ -105,7 +105,7 @@ public class Device {
             ) {
                 Gson gson = new GsonBuilder().create();
                 conf = gson.fromJson(fr, OnboardingResponse.class);
-                this.deviceNumber = conf.deviceId;
+                this.deviceId = conf.deviceId;
 
             } catch (IOException e) {
                 log.error("Error while loading config", e);
@@ -124,7 +124,7 @@ public class Device {
             return;
         }
 
-        Request request = new Request.Builder().url(hubApiUrl + "/register/" + getDeviceNumber()).build();
+        Request request = new Request.Builder().url(hubApiUrl + "/register/" + getDeviceId()).build();
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             assert response.body() != null;
@@ -203,7 +203,7 @@ public class Device {
     public List<Point> getMetrics() {
         Point p = Point.measurement(getMeasurmentName());
         p.time(Instant.now(), WritePrecision.S);
-        p.addTag("sid", getDeviceNumber());
+        p.addTag("device_id", getDeviceId());
         String location = getLocation();
         if (location != null) {
             p.addTag("location", location);
@@ -276,8 +276,8 @@ public class Device {
     }
 
 
-    public String getDeviceNumber() {
-        return this.deviceNumber;
+    public String getDeviceId() {
+        return this.deviceId;
     }
 
     private String getConfigFileName() {

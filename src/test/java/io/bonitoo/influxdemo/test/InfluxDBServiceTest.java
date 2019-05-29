@@ -76,7 +76,7 @@ public class InfluxDBServiceTest {
             .range(-5l, ChronoUnit.MINUTES)
             .filter(Restrictions.measurement().equal("sensor"))
             .filter(Restrictions.field().equal("temperature"))
-            .filter(Restrictions.column("sid").equal("sensor3"))
+            .filter(Restrictions.column("device_id").equal("sensor3"))
             .limit().withN(10);
         //.withPropertyValue("offset", 1l)
 

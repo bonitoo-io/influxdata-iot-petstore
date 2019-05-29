@@ -50,7 +50,7 @@ public class BME280Device extends Device {
         if (location != null) {
             p.addTag("location", location);
         }
-        p.addTag("sid", getDeviceNumber());
+        p.addTag("device_id", getDeviceId());
         try {
             p.addField("pressure", bme280.readPressure());
             p.addField("temperature", bme280.readTemperature());
@@ -63,7 +63,7 @@ public class BME280Device extends Device {
     }
 
     @Override
-    public String getDeviceNumber() {
+    public String getDeviceId() {
         try {
             return SystemInfo.getSerial();
         } catch (Exception e) {

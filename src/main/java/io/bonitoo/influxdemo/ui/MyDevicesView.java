@@ -64,7 +64,7 @@ public class MyDevicesView extends VerticalLayout {
 
         ComponentRenderer<Span, DeviceInfo> deviceNumberColumn = new ComponentRenderer<>(deviceInfo -> {
             Span span = new Span();
-            span.setText(deviceInfo.getDeviceNumber());
+            span.setText(deviceInfo.getDeviceId());
             span.addClassName("monospace");
             span.addClassName("tiny");
             return span;
@@ -83,7 +83,7 @@ public class MyDevicesView extends VerticalLayout {
 
         ComponentRenderer<Component, DeviceInfo> lastSeen = new ComponentRenderer<>(deviceInfo -> {
 
-            Instant lastSeen1 = deviceRegistryService.getLastSeen(deviceInfo.getDeviceNumber());
+            Instant lastSeen1 = deviceRegistryService.getLastSeen(deviceInfo.getDeviceId());
 
             DateTimeFormatter formatter =
                 DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM )
@@ -168,7 +168,7 @@ public class MyDevicesView extends VerticalLayout {
 
 
                     TextField deviceNameField = new TextField("Enter device name: ");
-                    deviceNameField.setValue(d.getDeviceNumber());
+                    deviceNameField.setValue(d.getDeviceId());
                     deviceNameField.setRequired(true);
                     formLayout.addFormItem(deviceNameField, "");
 
@@ -187,8 +187,8 @@ public class MyDevicesView extends VerticalLayout {
                             deviceNameField.setErrorMessage("Device name is required!");
                             return;
                         }
-                        deviceRegistryService.authorizeDevice(d.getDeviceNumber(), deviceNameField.getValue());
-                        Notification.show("Device " + d.getDeviceNumber() + " was authorized. ");
+                        deviceRegistryService.authorizeDevice(d.getDeviceId(), deviceNameField.getValue());
+                        Notification.show("Device " + d.getDeviceId() + " was authorized. ");
                         deviceGrid.getDataProvider().refreshItem(d);
                         dialog.close();
                     });
@@ -205,10 +205,10 @@ public class MyDevicesView extends VerticalLayout {
             if (d.isAuthorized()) {
                 // button for saving the name to backend
                 Button remove = new Button("Remove", event -> {
-                    deviceRegistryService.removeDeviceInfo(d.getDeviceNumber());
+                    deviceRegistryService.removeDeviceInfo(d.getDeviceId());
                     deviceGrid.getDataProvider().refreshItem(d);
 
-                    Notification.show("Device " + d.getDeviceNumber() + " was removed. ");
+                    Notification.show("Device " + d.getDeviceId() + " was removed. ");
                 });
                 remove.addThemeVariants(ButtonVariant.LUMO_SMALL);
                 remove.addThemeVariants(ButtonVariant.LUMO_ERROR);

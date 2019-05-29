@@ -10,7 +10,7 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 public class DeviceInfo implements Serializable {
 
     @Id
-    private String deviceNumber;
+    private String deviceId;
     private String name;
     private String deviceType;
     private boolean authorized;
@@ -21,12 +21,12 @@ public class DeviceInfo implements Serializable {
     private Date lastSeen;
     private String remoteAddress;
 
-    public String getDeviceNumber() {
-        return deviceNumber;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setDeviceNumber(final String deviceNumber) {
-        this.deviceNumber = deviceNumber;
+    public void setDeviceId(final String deviceId) {
+        this.deviceId = deviceId;
     }
 
     public String getName() {

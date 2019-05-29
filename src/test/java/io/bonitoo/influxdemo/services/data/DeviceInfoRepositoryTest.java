@@ -42,7 +42,7 @@ public class DeviceInfoRepositoryTest {
     public void put() {
 
         DeviceInfo device = new DeviceInfo();
-        device.setDeviceNumber(UUID.randomUUID().toString());
+        device.setDeviceId(UUID.randomUUID().toString());
         device.setName("my-device");
         device.setDeviceType("my-device");
         device.setAuthorized(true);
@@ -64,7 +64,7 @@ public class DeviceInfoRepositoryTest {
         Assertions.assertThat(optional.isPresent()).isFalse();
 
         DeviceInfo device = new DeviceInfo();
-        device.setDeviceNumber(deviceNumber);
+        device.setDeviceId(deviceNumber);
         device.setName("Testing name");
 
         deviceInfoRepository.save(device);
@@ -82,12 +82,12 @@ public class DeviceInfoRepositoryTest {
 
         device = deviceInfoRepository.save(device);
 
-        Assertions.assertThat(device.getDeviceNumber()).isNotBlank();
+        Assertions.assertThat(device.getDeviceId()).isNotBlank();
 
-        String id = device.getDeviceNumber();
+        String id = device.getDeviceId();
 
         device = deviceInfoRepository.findById(id).get();
-        Assertions.assertThat(device.getDeviceNumber()).isEqualTo(id);
+        Assertions.assertThat(device.getDeviceId()).isEqualTo(id);
         Assertions.assertThat(device.getName()).isEqualTo("Device without number");
 
         deviceInfoRepository.deleteById(id);
