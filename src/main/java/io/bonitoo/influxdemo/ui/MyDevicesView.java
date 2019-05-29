@@ -1,12 +1,9 @@
 package io.bonitoo.influxdemo.ui;
 
 
+import java.sql.Date;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.List;
-import java.util.Locale;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
@@ -16,7 +13,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -33,6 +29,7 @@ import com.vaadin.flow.shared.Registration;
 import io.bonitoo.influxdemo.MainLayout;
 import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.DeviceRegistryService;
+import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,13 +44,11 @@ public class MyDevicesView extends VerticalLayout {
     private static Logger log = LoggerFactory.getLogger(MyDevicesView.class);
 
     private Registration registration;
-    private DeviceRegistryService deviceRegistryService;
 
     Grid<DeviceInfo> deviceGrid;
 
     @Autowired
     public MyDevicesView(DeviceRegistryService deviceRegistryService) {
-        this.deviceRegistryService = deviceRegistryService;
         setSizeFull();
 
         VerticalLayout verticalLayout = new VerticalLayout();
@@ -66,15 +61,13 @@ public class MyDevicesView extends VerticalLayout {
             Span span = new Span();
             span.setText(deviceInfo.getDeviceId());
             span.addClassName("monospace");
-            span.addClassName("tiny");
             return span;
         });
 
         ComponentRenderer<Icon, DeviceInfo> authIconColumn = new ComponentRenderer<>(deviceInfo -> {
-
             if (deviceInfo.isAuthorized()) {
                 Icon icon = new Icon(VaadinIcon.CHECK);
-                icon.setColor("00FF00");
+                icon.setColor("var(--lumo-success-color)");
                 return icon;
             } else {
                 return new Icon(VaadinIcon.QUESTION_CIRCLE_O);
@@ -82,48 +75,16 @@ public class MyDevicesView extends VerticalLayout {
         });
 
         ComponentRenderer<Component, DeviceInfo> lastSeen = new ComponentRenderer<>(deviceInfo -> {
-
             Instant lastSeen1 = deviceRegistryService.getLastSeen(deviceInfo.getDeviceId());
-
-            DateTimeFormatter formatter =
-                DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM )
-                    .withLocale( Locale.UK )
-                    .withZone( ZoneId.systemDefault() );
-
-
+            PrettyTime formatter = new PrettyTime();
                 Span span = new Span();
                 if (lastSeen1 != null) {
-                    span.setText(formatter.format(lastSeen1));
+                    span.setText(formatter.format(Date.from(lastSeen1)));
                 } else {
                     span.setText(" - ");
                 }
-                span.addClassName("tiny");
                 return span;
         });
-
-        ComponentRenderer<Div, DeviceInfo> authRenderer = new ComponentRenderer<>(deviceInfo -> {
-
-            Div div = new Div();
-            {
-                Span span = new Span();
-                span.setText(deviceInfo.getAuthId());
-                span.addClassName("monospace");
-                span.addClassName("tiny");
-                div.add(span);
-
-            }
-            /*
-            {
-                Div span = new Div();
-                span.setText(deviceInfo.getAuthToken());
-                span.addClassName("tiny");
-                span.addClassName("monospace");
-                div.add(span);
-            }
-             */
-            return div;
-        });
-
 
         deviceGrid = new Grid<>();
 
@@ -151,7 +112,6 @@ public class MyDevicesView extends VerticalLayout {
         deviceGrid.addColumn(DeviceInfo::getName).setHeader("Device Name").setWidth("15%");
         deviceGrid.addColumn(DeviceInfo::getRemoteAddress).setHeader("IP").setWidth("15%");
         deviceGrid.addColumn(authIconColumn).setHeader("Authorized").setWidth("10%");
-//        deviceGrid.addColumn(authRenderer).setHeader("Auth Info").setWidth("10%");
         deviceGrid.addColumn(lastSeen).setHeader("Last seen").setWidth("20%");
         deviceGrid.addColumn(new ComponentRenderer<>(d -> {
             HorizontalLayout buttons = new HorizontalLayout();
@@ -231,7 +191,7 @@ public class MyDevicesView extends VerticalLayout {
         super.onAttach(attachEvent);
 
         getUI().ifPresent(ui -> {
-            ui.setPollInterval(1000);
+            ui.setPollInterval(2000);
 
             registration = ui.addPollListener(l -> {
                 log.debug("pooling....");
