@@ -15,7 +15,6 @@ import org.influxdata.spring.influx.InfluxDB2Properties;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.AxisTitle;
 import com.vaadin.flow.component.charts.model.AxisType;
@@ -96,7 +95,7 @@ public class DashboardView extends VerticalLayout {
         add(rangeCombo);
 
 
-        chartTemperatureSettings = new FluxChartSettings("Temperature °C", bucketName, "sensor",
+        chartTemperatureSettings = new FluxChartSettings("Temperature °C", bucketName, "air",
             new String[]{"temperature"},
             new TagStructure[]{
                 new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
@@ -108,7 +107,7 @@ public class DashboardView extends VerticalLayout {
 //        chartTemperature.setWidth("80%");
         chartTemperature.setHeight("300px");
 
-        chartHumiditySettings = new FluxChartSettings("Humidity %", bucketName, "sensor",
+        chartHumiditySettings = new FluxChartSettings("Humidity %", bucketName, "air",
             new String[]{"humidity"},
             new TagStructure[]{
                 new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
@@ -118,7 +117,7 @@ public class DashboardView extends VerticalLayout {
         chartHumidity.setHeight("300px");
 
 
-        chartPressureSettings = new FluxChartSettings("Pressure hPa", bucketName, "sensor",
+        chartPressureSettings = new FluxChartSettings("Pressure hPa", bucketName, "air",
             new String[]{"pressure"},
             new TagStructure[]{
                 new TagStructure("sid", deviceNumbers.toArray(new String[0]))},
@@ -161,14 +160,11 @@ public class DashboardView extends VerticalLayout {
     @Override
     protected void onDetach(final DetachEvent detachEvent) {
         super.onDetach(detachEvent);
-        UI ui = getUI().get();
-        ui.setPollInterval(-1);
+        getUI().ifPresent(ui -> ui.setPollInterval(-1));
         registration.remove();
     }
 
     private Chart createChart(FluxChartSettings fs) {
-
-        QueryApi queryClient = influxDBClient.getQueryApi();
 
         final Chart chart = new Chart();
 
@@ -343,7 +339,7 @@ public class DashboardView extends VerticalLayout {
 
 
         String windowAggregate = Utils.agregateWindow(rangeStart);
-        if (windowAggregate!= null) {
+        if (windowAggregate != null) {
             fluxQueryBase.append("   |> aggregateWindow(every: " + windowAggregate + ", fn:mean)");
         }
         log.debug(fluxQueryBase.toString());

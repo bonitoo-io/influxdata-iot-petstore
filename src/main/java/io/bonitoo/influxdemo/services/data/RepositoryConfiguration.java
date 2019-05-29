@@ -40,9 +40,13 @@ public class RepositoryConfiguration {
 
     private final String dbPath;
 
-    public RepositoryConfiguration(@Value("${petstore.db:./db.json}") final String dbPath) {
+    public RepositoryConfiguration(@Value("${petstore.db:./db}") final String dbPath) {
         this.dbPath = dbPath;
     }
+
+    private Map<String, Type> types = new HashMap<String, Type>() {{
+        put("devices", new TypeToken<HashMap<String, HashMap<String, DeviceInfo>>>() {}.getType());
+    }};
 
     @Bean
     public KeyValueOperations persistKeyValue() {
@@ -52,32 +56,34 @@ public class RepositoryConfiguration {
     @Bean
     public KeyValueAdapter keyValueAdapter() {
 
-        Map<String, Map<Object, Object>> store = null;
+        Map<String, Map<Object, Object>> store = CollectionFactory.createMap(ConcurrentHashMap.class, 100);
 
         //
         // Populate store from file
         //
         if (new File(dbPath).exists()) {
+            for (final String typeKey : types.keySet()) {
+                Type type = types.get(typeKey);
 
-            log.info("Populate store from {}", dbPath);
+                String file = getTypeFile(typeKey);
+                log.info("Populate store from {}", file);
 
-            try (JsonReader reader = new JsonReader(new FileReader(dbPath))){
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                Map data = gson.fromJson(reader, getType());
-                store = CollectionFactory.createMap(ConcurrentHashMap.class, 100);
-                store.putAll(data);
+                try (JsonReader reader = new JsonReader(new FileReader(file))) {
+                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    Map data = gson.fromJson(reader, type);
+                    store.putAll(data);
 
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
 
-        if (store == null) {
-
-            store = CollectionFactory.createMap(ConcurrentHashMap.class, 100);
-        }
-
         return new PersistMapKeyValueAdapter(store);
+    }
+
+    private String getTypeFile(final String typeKey) {
+        return dbPath + "-" + typeKey + ".json";
     }
 
     private class PersistMapKeyValueAdapter extends MapKeyValueAdapter {
@@ -86,7 +92,6 @@ public class RepositoryConfiguration {
 
         private PersistMapKeyValueAdapter(final Map<String, Map<Object, Object>> store) {
             super(store);
-
             this.store = store;
         }
 
@@ -94,25 +99,20 @@ public class RepositoryConfiguration {
         @Override
         public Object put(final Object id, @Nonnull final Object item, final String keyspace) {
             Object stored = super.put(id, item, keyspace);
-
             persist();
-
             return stored;
         }
 
         @Override
         public Object delete(final Object id, @Nonnull final String keyspace) {
             Object deleted = super.delete(id, keyspace);
-
             persist();
-
             return deleted;
         }
 
         @Override
         public void deleteAllOf(@Nonnull final String keyspace) {
             super.deleteAllOf(keyspace);
-
             persist();
         }
 
@@ -128,20 +128,19 @@ public class RepositoryConfiguration {
 
         private void persist() {
 
-            log.debug("Persisting store {} to {}", store, dbPath);
+            for (final String typeKey : types.keySet()) {
+                Type type = types.get(typeKey);
 
-            try (FileWriter writer = new FileWriter(dbPath)) {
-                Gson gson = new GsonBuilder().create();
-                gson.toJson(store,getType(), writer);
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
+                log.debug("Persisting store {} to {}", store, getTypeFile(typeKey));
+
+                try (FileWriter writer = new FileWriter(getTypeFile(typeKey))) {
+                    Gson gson = new GsonBuilder().create();
+                    gson.toJson(store, type, writer);
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
-    }
-
-    private Type getType() {
-        return new TypeToken<HashMap<String, HashMap<String, DeviceInfo>>>() {
-        }.getType();
     }
 
 }
