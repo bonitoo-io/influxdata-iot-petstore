@@ -2,8 +2,6 @@ package io.bonitoo.influxdemo.ui;
 
 import org.influxdata.client.InfluxDBClient;
 import org.influxdata.spring.influx.InfluxDB2Properties;
-import io.bonitoo.influxdemo.MainLayout;
-import io.bonitoo.influxdemo.ui.components.FluxResultGrid;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -18,6 +16,8 @@ import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import io.bonitoo.influxdemo.MainLayout;
+import io.bonitoo.influxdemo.ui.components.FluxResultGrid;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,7 @@ public class FluxResultView extends HorizontalLayout {
         this.properties = properties;
         query = "from(bucket: \"" + properties.getBucket() + "\")\n" +
             "  |> range(start: -15m)\n" +
-            "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
+            "  |> filter(fn: (r) => r._measurement == \"air\")\n" +
             "  |> filter(fn: (r) => r._field == \"temperature\")\n";
 
         setSizeFull();

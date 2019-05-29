@@ -162,7 +162,6 @@ public class DeviceRegistryService {
 
             String s = "from(bucket: \"my-bucket\")\n" +
                 "  |> range(start: -1w)\n" +
-                "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
                 "  |> filter(fn: (r) => r.sid == \"" + deviceId + "\")\n" +
                 "  |> keep(columns: [\"_time\",\"_value\"])\n" +
                 "  |> last()";

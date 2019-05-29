@@ -50,7 +50,7 @@ public class ExecuteFluxView extends HorizontalLayout {
 
         query = "from(bucket: \"" + properties.getBucket() + "\")\n" +
             "  |> range(start: -1d)\n" +
-            "  |> filter(fn: (r) => r._measurement == \"sensor\")\n" +
+            "  |> filter(fn: (r) => r._measurement == \"air\")\n" +
             "  |> filter(fn: (r) => r._field == \"temperature\")\n" +
             "  |> limit(n: 10, offset: 1)";
 
