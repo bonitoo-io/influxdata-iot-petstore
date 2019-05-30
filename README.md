@@ -1,20 +1,19 @@
-# InfluxDB 2.0 Java client Vaadin demo
+# IoT Pet Store Demo
 
 [![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/rhajek/influx-demo)
 
+A project example for using [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]) in Java/Spring ecosystem. 
 
-A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]). 
-
-UI is implemented in [Vaadin Flow](https://vaadin.com/flow). Backend is integrated using [Spring Boot](https://spring.io/projects/spring-boot). 
-The UI is built with Java only. [Micrometer.io](https://micrometer.io/) framework is used for monitoring. Metrics from application are exposed in Prometheus format.
-
+* UI is implemented in Java using [Vaadin Flow](https://vaadin.com/flow) framework. 
+* Backend is implemented using [Spring Boot](https://spring.io/projects/spring-boot). 
+* [Micrometer.io](https://micrometer.io/) framework is used for monitoring, metrics are pushed into InfluxDB.
 #### Architecture
 
 ![Architecture](doc/architecture.png)
 
 ## Prerequisites
 
-The project can be imported into the IDE of your choice, with Java 8 installed, as a Maven project.
+The project can be imported into the IDE of your choice, with Java 8+ installed, as a Maven project.
 
 Demo uses [Vaadin Charts](https://vaadin.com/components/vaadin-charts) library for the metrics visualization. Vaadin Charts is
 commercial library and license file is needed in order to compile a run the demo. Free trial license can be obtained from https://vaadin.com/trial.
