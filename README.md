@@ -8,8 +8,9 @@ A project example for a [InfluxDB 2.0 java client]([https://github.com/bonitoo-i
 UI is implemented in [Vaadin Flow](https://vaadin.com/flow). Backend is integrated using [Spring Boot](https://spring.io/projects/spring-boot). 
 The UI is built with Java only. [Micrometer.io](https://micrometer.io/) framework is used for monitoring. Metrics from application are exposed in Prometheus format.
 
-TODO: 
-- Add InfluxDB2.0 support to micrometer-registry-influx 
+#### Architecture
+
+![Architecture](doc/architecture.png)
 
 ## Prerequisites
 
