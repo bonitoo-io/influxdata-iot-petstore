@@ -21,6 +21,7 @@ import org.influxdata.client.write.Point;
 import org.influxdata.client.write.events.WriteErrorEvent;
 import org.influxdata.client.write.events.WriteRetriableErrorEvent;
 import org.influxdata.client.write.events.WriteSuccessEvent;
+import org.influxdata.exceptions.UnauthorizedException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -133,8 +134,8 @@ public class Device {
             switch (code) {
                 case 200: {
                     Gson gson = new GsonBuilder().create();
-                    boolean b = setupDevice(gson.fromJson(jsonBody, OnboardingResponse.class));
-                    if (b) {
+                    boolean setupDeviceSucess = setupDevice(gson.fromJson(jsonBody, OnboardingResponse.class));
+                    if (setupDeviceSucess) {
                         saveConfig();
                     }
                     return;
@@ -143,8 +144,12 @@ public class Device {
                     log.info("Waiting for device authorization... " + response.message());
                     return;
                 }
+                case 204: {
+                    log.info("Device is already registered in Hub.");
+                    return;
+                }
                 default: {
-                    log.info("Device registration error " + code + ". " + response.message());
+                    log.error("Device registration error " + code + ". " + response.message());
                 }
             }
         } catch (Exception e) {
@@ -167,11 +172,17 @@ public class Device {
         writeApi.listenEvents(WriteErrorEvent.class,
             (event) -> {
                 log.info("Write error " + event.getThrowable().getLocalizedMessage());
-                this.config = null;
 
-                if (new File(getConfigFileName()).delete()) {
-                    log.info("Config was reset.");
+                Throwable e = event.getThrowable();
+                //unauthorized attempt to write data -> reset device configuration
+                if (e instanceof UnauthorizedException) {
+                    this.config = null;
+
+                    if (new File(getConfigFileName()).delete()) {
+                        log.info("Config was reset.");
+                    }
                 }
+
             });
         writeApi.listenEvents(WriteRetriableErrorEvent.class,
             (event) -> log.info("Retryable Write error " + event.getThrowable().getLocalizedMessage()));
