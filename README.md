@@ -140,3 +140,55 @@ After that you can  use ```@Autowired``` annotation and inject client ```org.inf
 
 Source code and detail description of Spring and InfluxDB2.0 integration is located in    
 [https://github.com/bonitoo-io/influxdb-client-java/tree/master/spring](https://github.com/bonitoo-io/influxdb-client-java/tree/master/spring) repository.
+
+### Example of Raspberry IoT Device
+
+Raspberry PI device that uses BME280 sensor for the air temperature, humidity and pressure. 
+The device uses InfluxDB java client libraries to send metrics, [Pi4j](https://pi4j.com) library for communicate with the rPI bus and
+BME280 code is adopted from [raspberry-coffee](https://github.com/OlivierLD/raspberry-coffee) library.
+
+Sources are located in [device-java](./device-java) subdirectory of this project.
+
+If you want to run that code on real rPI just change main runner class in [device-java/pom.xml](device-java/pom.xml) 
+```
+<!--<mainClass>io.bonitoo.demo.device.bme280.BME280Device</mainClass>-->
+```
+
+Thanks to [spring-boot-maven-plugin](https://docs.spring.io/spring-boot/docs/current/reference/html/deployment-install.html) 
+it is easy to create natively executable jar file that can by run the directly from shell or integrated as 
+[systemd](https://docs.spring.io/spring-boot/docs/current/reference/html/deployment-install.html#deployment-systemd-service) or [init.d](https://docs.spring.io/spring-boot/docs/current/reference/html/deployment-install.html#deployment-initd-service) service. 
+
+```bash
+cd device-java
+mvn -Dmaven.test.skip=true package
+java -Dlocation=Prerov  -Dpetstore.multicastAddress=230.0.0.0 -Dinterval=5 ./target/device-java-1.0-SNAPSHOT-spring-boot.jar
+
+[pool-1-thread-1] INFO io.bonitoo.demo.device.Device - Searching for hub...
+[Thread-0] INFO io.bonitoo.demo.device.DeviceDiscovery - Starting Hub discovery...
+[Thread-0] INFO io.bonitoo.demo.device.DeviceDiscovery - Listening on en7 ip:231.0.0.0:4445
+[Thread-0] INFO io.bonitoo.demo.device.DeviceDiscovery - Waiting for the message... name:en7 (en7) /231.0.0.0
+[pool-1-thread-1] INFO io.bonitoo.demo.device.Device - Searching for hub...
+[pool-1-thread-1] INFO io.bonitoo.demo.device.Device - Searching for hub...
+[Thread-0] INFO io.bonitoo.demo.device.DeviceDiscovery - hubUrl discovered: http://10.100.0.112:8080/api !
+[pool-1-thread-1] INFO io.bonitoo.demo.device.Device - Waiting for device authorization...
+[pool-1-thread-1] INFO io.bonitoo.demo.device.Device - Saving configuration to: ./conf2.json
+[RxNewThreadScheduler-2] INFO io.bonitoo.demo.device.Device - Write success. air,device_id=00000000XXXXXX,location=Prerov humidity=38.26288604736328,pressure=998.4058837890625,temperature=24.972904205322266 1559229158
+[RxNewThreadScheduler-2] INFO io.bonitoo.demo.device.Device - Write success. air,device_id=00000000XXXXXX,location=Prerov humidity=38.22581481933594,pressure=998.4010009765625,temperature=24.970407485961914 1559229188
+...
+
+```
+
+Our device will try to discover the PetStore API url using multicast on LAN, 
+or custom url can be specified using -DhubApiUrl=http://localhost:8080/api system property.  Then you must authorize the device
+by on http://localhost:8080/my-devices page.
+
+![authorize](doc/authorize-device.png)
+ 
+![rPI](doc/raspberry-bme280.png)
+
+Good resource for getting started for Raspberry with BME280 is located: 
+
+* [https://www.raspberrypi-spy.co.uk/2016/07/using-bme280-i2c-temperature-pressure-sensor-in-python/](https://www.raspberrypi-spy.co.uk/2016/07/using-bme280-i2c-temperature-pressure-sensor-in-python/)
+
+
+
