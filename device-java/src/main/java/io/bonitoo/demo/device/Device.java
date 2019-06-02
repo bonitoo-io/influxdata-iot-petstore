@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.NetworkInterface;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -81,12 +82,8 @@ public class Device {
         executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(this::loop, 0, interval, intervalUnit);
         if (hubApiUrl == null) {
-            try {
-                DeviceDiscovery deviceDiscovery = new DeviceDiscovery(this);
-                deviceDiscovery.start();
-            } catch (IOException e) {
-                log.info("device discovery error: " + e.toString());
-            }
+               DeviceDiscovery.listAllMulticastInterfaces()
+                .forEach(anInterface -> new DeviceDiscovery(this, anInterface).start());
         }
     }
 

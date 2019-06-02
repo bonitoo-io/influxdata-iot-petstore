@@ -21,50 +21,39 @@ public class DeviceDiscovery extends Thread {
 
     private static Logger log = LoggerFactory.getLogger(DeviceDiscovery.class);
     private Device device;
+    private NetworkInterface networkInterface;
 
-    public DeviceDiscovery(Device device) throws IOException {
+    public DeviceDiscovery(final Device device, final NetworkInterface networkInterface) {
         this.device = device;
+        this.networkInterface = networkInterface;
     }
 
     public void run() {
         log.info("Starting Hub discovery...");
-        boolean running = true;
         if (device.isRegistered() && device.getHubApiUrl() != null) {
             return;
         }
 
-        while (running) {
-            List<NetworkInterface> networkInterfaces = listAllMulticastInterfaces();
-            for (NetworkInterface networkInterface : networkInterfaces) {
-                try {
-                    String received = receiveMessage(
-                        System.getProperty("petstore.multicastAddress", "230.0.0.0"),
-                        networkInterface.getName(),
-                        Integer.parseInt(System.getProperty("petstore.multicastPort", "4445")));
+        try {
+            String received = receiveMessage(
+                System.getProperty("petstore.multicastAddress", "230.0.0.0"),
+                networkInterface.getName(),
+                Integer.parseInt(System.getProperty("petstore.multicastPort", "4445")));
 
-                    String packetStartMark = "[petstore.hubUrl=";
-                    String url = received.substring(
-                        received.indexOf(packetStartMark) + packetStartMark.length(),
-                        received.indexOf("]"));
+            String packetStartMark = "[petstore.hubUrl=";
+            String url = received.substring(
+                received.indexOf(packetStartMark) + packetStartMark.length(),
+                received.indexOf("]"));
 
-                    log.info("hubUrl discovered: " + url + " !");
-                    running = false;
-                    if (device != null) {
-                        device.setHubApiUrl(url);
-                        break;
-                    }
-                } catch (Exception e) {
-                    log.warn("iface: " + networkInterface.getName() + " ," + e.getMessage());
-                }
+            log.info("hubUrl discovered: " + url + " !");
+            if (device != null) {
+                device.setHubApiUrl(url);
             }
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException ignored) {
-
-            }
+        } catch (Exception e) {
+            log.warn("iface: " + networkInterface.getName() + " ," + e.getMessage());
         }
-
     }
+
 
     private String receiveMessage(String ip, String iface, int port) throws IOException {
 
@@ -88,7 +77,7 @@ public class DeviceDiscovery extends Thread {
         }
     }
 
-    private List<NetworkInterface> listAllMulticastInterfaces() {
+    static List<NetworkInterface> listAllMulticastInterfaces() {
         List<NetworkInterface> ret = new ArrayList<>();
         Enumeration<NetworkInterface> interfaces;
         try {
@@ -107,8 +96,6 @@ public class DeviceDiscovery extends Thread {
         }
         return ret;
     }
-
-
 }
 
 
