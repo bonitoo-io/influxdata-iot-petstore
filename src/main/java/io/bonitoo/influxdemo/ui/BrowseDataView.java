@@ -25,6 +25,7 @@ import com.vaadin.flow.component.charts.model.Stacking;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -103,6 +104,7 @@ public class BrowseDataView extends HorizontalLayout {
 
         VerticalLayout contentLayout = new VerticalLayout();
         splitLayout.addToPrimary(contentLayout);
+        contentLayout.add(new H3("Browse data"));
 
         VerticalLayout filterLayout = new VerticalLayout();
         filterLayout.add(new Label("Filter"));
@@ -174,13 +176,12 @@ public class BrowseDataView extends HorizontalLayout {
         fluxTextArea.getStyle().set("overflow", "auto");
         fluxTextArea.setHeight("25%");
 
-
         statusLabel = new TextField();
         statusLabel.setWidth("100%");
         statusLabel.setEnabled(false);
         statusLabel.addThemeVariants(TextFieldVariant.LUMO_SMALL);
 
-        contentLayout.add(statusLabel);
+//        contentLayout.add(statusLabel);
 
         HorizontalLayout hl = new HorizontalLayout();
         hl.setWidth("100%");
@@ -212,8 +213,7 @@ public class BrowseDataView extends HorizontalLayout {
         filterLayout.add(fluxTextArea);
 
         progressBar = new ProgressBar();
-
-        contentLayout.add(progressBar);
+//        contentLayout.add(progressBar);
         resultLayout.setSizeFull();
         contentLayout.add(resultLayout);
 
@@ -225,7 +225,6 @@ public class BrowseDataView extends HorizontalLayout {
         contentLayout.removeAll();
 
         query = createFluxQuery();
-
 
         UI.getCurrent().setPollInterval(1000);
         StopWatch stopWatch = new StopWatch();
@@ -292,7 +291,9 @@ public class BrowseDataView extends HorizontalLayout {
 
     private void addToChart(final VerticalLayout contentLayout, final List<FluxTable> tables, DisplayType displayType) {
         final Chart chart = new Chart();
+        chart.setHeightFull();
         final Configuration configuration = chart.getConfiguration();
+        chart.setTimeline(true);
         configuration.getChart().setType(ChartType.AREA);
 
         if (displayType == DisplayType.CHART_STACKED) {

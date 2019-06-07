@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle(value = "Execute Flux")
 public class ExecuteFluxView extends HorizontalLayout {
 
-    public static final String VIEW_NAME = "Execute Flux";
+    public static final String VIEW_NAME = "Flux Console";
 
     private static Logger log = LoggerFactory.getLogger(ExecuteFluxView.class);
 

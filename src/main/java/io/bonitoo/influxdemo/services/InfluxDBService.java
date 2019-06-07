@@ -137,12 +137,12 @@ public class InfluxDBService {
         String q = "from(bucket: \"" + bucket + "\")\n" +
             "  |> range(start: -5m, stop: now())\n" +
             createOrFilter("_measurement", selectedMeasurements) +
-            "  |> filter(fn: (r) => true)\n"
-            + "  |> group(columns: [\"_field\"])\n"
-            + "  |> distinct(column: \"_field\")\n"
-            + "  |> keep(columns: [\"_value\"])\n"
-            + "  |> limit(n: 200)\n"
-            + "  |> sort()";
+            "  |> filter(fn: (r) => true)\n" +
+            "  |> keep(columns: [\"_field\"])\n" +
+            "  |> group()\n" +
+            "  |> distinct(column: \"_field\")\n" +
+            "  |> limit(n: 200)\n" +
+            "  |> sort()\"";
 
         return queryStringValues(q);
     }

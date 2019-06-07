@@ -52,6 +52,7 @@ public class MyDevicesView extends VerticalLayout {
         setSizeFull();
 
         VerticalLayout verticalLayout = new VerticalLayout();
+        verticalLayout.setSizeFull();
 
         H3 h3 = new H3("My Devices");
         verticalLayout.add(h3);
@@ -106,6 +107,7 @@ public class MyDevicesView extends VerticalLayout {
             query -> deviceRegistryService.getDeviceInfos().size());
 
         deviceGrid.setDataProvider(dataProvider);
+        deviceGrid.setHeightFull();
 
 
         deviceGrid.addColumn(deviceNumberColumn).setHeader("Device Number").setWidth("15%");

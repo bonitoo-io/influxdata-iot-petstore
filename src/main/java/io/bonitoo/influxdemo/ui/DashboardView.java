@@ -26,6 +26,7 @@ import com.vaadin.flow.component.charts.model.Labels;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -86,6 +87,8 @@ public class DashboardView extends VerticalLayout {
         setClassName("dashboard");
         setSizeFull();
 
+        add(new H3(VIEW_NAME));
+
         rangeCombo = new ComboBox<String>("Range start");
         rangeCombo.setItems(Utils.getTimeRangeList());
         rangeCombo.setRequired(true);
@@ -106,6 +109,7 @@ public class DashboardView extends VerticalLayout {
 
 //        chartTemperature.setWidth("80%");
         chartTemperature.setHeight("300px");
+        chartTemperature.setWidthFull();
 
         chartHumiditySettings = new FluxChartSettings("Humidity %", bucketName, "air",
             new String[]{"humidity"},
@@ -115,6 +119,7 @@ public class DashboardView extends VerticalLayout {
 
         chartHumidity = createChart(chartHumiditySettings);
         chartHumidity.setHeight("300px");
+        chartHumidity.setWidthFull();
 
 
         chartPressureSettings = new FluxChartSettings("Pressure hPa", bucketName, "air",
@@ -125,7 +130,7 @@ public class DashboardView extends VerticalLayout {
         chartPressure = createChart(chartPressureSettings);
 
         chartPressure.setHeight("300px");
-
+        chartPressure.setWidthFull();
 
         add(chartTemperature, chartHumidity, chartPressure);
 
@@ -181,10 +186,10 @@ public class DashboardView extends VerticalLayout {
         xAxis.setType(AxisType.DATETIME);
         YAxis yAxis = configuration.getyAxis();
         yAxis.setTitle(new AxisTitle(fs.label));
-        yAxis.setMin(0);
-        if (fs.yMax != null && fs.yMax.doubleValue() > 0) {
-            yAxis.setMax(fs.yMax);
-        }
+//        yAxis.setMin(0);
+//        if (fs.yMax != null && fs.yMax.doubleValue() > 0) {
+//            yAxis.setMax(fs.yMax);
+//        }
         if (fs.format != null) {
             Labels labels = new Labels();
             labels.setFormatter(fs.format);

@@ -18,13 +18,13 @@ import io.bonitoo.influxdemo.authentication.LoginScreen;
 
 public class Overview extends VerticalLayout {
 
-    public static final String VIEW_NAME = "Overview";
+    public static final String VIEW_NAME = "Docs";
 
     public Overview() {
 
         setClassName("mainMenuContent");
 
-        add(new H1("Petstore demo use cases"));
+        add(new H1("IoT Petstore demo use cases"));
 
 
         add(new H3("A. Collection of Data"));
