@@ -1,12 +1,13 @@
 # IoT Pet Store Demo
 
-[![Build Status](https://travis-ci.org/rhajek/influx-demo.svg?branch=master)](https://travis-ci.org/rhajek/influx-demo)
+[![Build Status](https://travis-ci.org/bonitoo-io/influxdata-iot-petstore.svg?branch=master)](https://travis-ci.org/rhajek/influx-demo)
 
 A project example for using [InfluxDB 2.0 java client]([https://github.com/bonitoo-io/influxdb-client-java]) in Java/Spring ecosystem. 
 
 * UI is implemented in Java using [Vaadin Flow](https://vaadin.com/flow) framework. 
 * Backend is implemented using [Spring Boot](https://spring.io/projects/spring-boot). 
 * [Micrometer.io](https://micrometer.io/) framework is used for monitoring, metrics are pushed into InfluxDB.
+
 #### Architecture
 
 ![Architecture](doc/architecture.png)
