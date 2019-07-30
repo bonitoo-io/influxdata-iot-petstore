@@ -121,7 +121,7 @@ To enable InfluxDB 2.0 client in your Spring application, you need only to add m
 
 ```xml
 <dependency>
-  <groupId>org.influxdata</groupId>
+  <groupId>com.influxdb</groupId>
   <artifactId>influxdb-spring</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -136,7 +136,7 @@ spring.influx2.bucket=my-bucket
 spring.influx2.token=my-token-123
 spring.influx2.username=my-user
 ```
-After that you can  use ```@Autowired``` annotation and inject client ```org.influxdata.client.InfluxDBClient``` in your Spring service and component.
+After that you can  use ```@Autowired``` annotation and inject client ```com.influxdb.client.InfluxDBClient``` in your Spring service and component.
 
 Source code and detail description of Spring and InfluxDB2.0 integration is located in    
 [https://github.com/bonitoo-io/influxdb-client-java/tree/master/spring](https://github.com/bonitoo-io/influxdb-client-java/tree/master/spring) repository.

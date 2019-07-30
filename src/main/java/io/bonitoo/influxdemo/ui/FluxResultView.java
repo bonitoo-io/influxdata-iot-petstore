@@ -1,7 +1,7 @@
 package io.bonitoo.influxdemo.ui;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

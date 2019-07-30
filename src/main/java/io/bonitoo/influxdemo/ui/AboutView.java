@@ -1,7 +1,7 @@
 package io.bonitoo.influxdemo.ui;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.domain.Check;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.domain.Check;
 import io.bonitoo.influxdemo.MainLayout;
 
 import com.vaadin.flow.component.html.Span;

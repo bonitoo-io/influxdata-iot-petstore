@@ -3,10 +3,10 @@ package io.bonitoo.influxdemo.ui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.QueryApi;
-import org.influxdata.query.FluxRecord;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.influxdata.client.domain.WritePrecision;
-import org.influxdata.client.write.Point;
+import com.influxdb.client.domain.WritePrecision;
+import com.influxdb.client.write.Point;
 
 import com.pi4j.io.i2c.I2CFactory;
 import com.pi4j.system.SystemInfo;
