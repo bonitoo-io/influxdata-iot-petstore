@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.QueryApi;
-import org.influxdata.query.FluxColumn;
-import org.influxdata.query.FluxRecord;
-import org.influxdata.query.FluxTable;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
+import com.influxdb.query.FluxColumn;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;

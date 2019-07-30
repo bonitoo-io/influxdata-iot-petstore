@@ -13,16 +13,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.InfluxDBClientFactory;
-import org.influxdata.client.WriteApi;
-import org.influxdata.client.domain.Check;
-import org.influxdata.client.domain.WritePrecision;
-import org.influxdata.client.write.Point;
-import org.influxdata.client.write.events.WriteErrorEvent;
-import org.influxdata.client.write.events.WriteRetriableErrorEvent;
-import org.influxdata.client.write.events.WriteSuccessEvent;
-import org.influxdata.exceptions.UnauthorizedException;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.InfluxDBClientFactory;
+import com.influxdb.client.WriteApi;
+import com.influxdb.client.domain.Check;
+import com.influxdb.client.domain.WritePrecision;
+import com.influxdb.client.write.Point;
+import com.influxdb.client.write.events.WriteErrorEvent;
+import com.influxdb.client.write.events.WriteRetriableErrorEvent;
+import com.influxdb.client.write.events.WriteSuccessEvent;
+import com.influxdb.exceptions.UnauthorizedException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

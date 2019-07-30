@@ -6,14 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.influxdata.LogLevel;
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.QueryApi;
-import org.influxdata.query.FluxTable;
-import org.influxdata.query.dsl.Flux;
-import org.influxdata.query.dsl.functions.properties.TimeInterval;
-import org.influxdata.query.dsl.functions.restriction.Restrictions;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.LogLevel;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
+import com.influxdb.query.FluxTable;
+import com.influxdb.query.dsl.Flux;
+import com.influxdb.query.dsl.functions.properties.TimeInterval;
+import com.influxdb.query.dsl.functions.restriction.Restrictions;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import io.bonitoo.influxdemo.services.InfluxDBService;
 import org.assertj.core.api.Assertions;

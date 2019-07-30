@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.influxdata.query.FluxRecord;
+import com.influxdb.query.FluxRecord;
 
 import com.vaadin.flow.component.grid.Grid;
 

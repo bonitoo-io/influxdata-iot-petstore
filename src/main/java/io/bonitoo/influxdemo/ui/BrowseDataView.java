@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.QueryApi;
-import org.influxdata.query.FluxRecord;
-import org.influxdata.query.FluxTable;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

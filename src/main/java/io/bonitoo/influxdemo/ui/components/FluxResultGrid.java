@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.QueryApi;
-import org.influxdata.query.FluxRecord;
-import org.influxdata.query.FluxTable;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.QueryApi;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
 import io.bonitoo.influxdemo.ui.DashboardView;
 
 import com.vaadin.flow.component.Composite;

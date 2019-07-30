@@ -6,15 +6,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import org.influxdata.client.AuthorizationsApi;
-import org.influxdata.client.InfluxDBClient;
-import org.influxdata.client.domain.Authorization;
-import org.influxdata.client.domain.AuthorizationUpdateRequest;
-import org.influxdata.client.domain.Permission;
-import org.influxdata.client.domain.PermissionResource;
-import org.influxdata.query.FluxRecord;
-import org.influxdata.query.FluxTable;
-import org.influxdata.spring.influx.InfluxDB2Properties;
+import com.influxdb.client.AuthorizationsApi;
+import com.influxdb.client.InfluxDBClient;
+import com.influxdb.client.domain.Authorization;
+import com.influxdb.client.domain.AuthorizationUpdateRequest;
+import com.influxdb.client.domain.Permission;
+import com.influxdb.client.domain.PermissionResource;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
+import com.influxdb.spring.influx.InfluxDB2Properties;
 
 import io.bonitoo.influxdemo.domain.DeviceInfo;
 import io.bonitoo.influxdemo.services.data.DeviceInfoRepository;
